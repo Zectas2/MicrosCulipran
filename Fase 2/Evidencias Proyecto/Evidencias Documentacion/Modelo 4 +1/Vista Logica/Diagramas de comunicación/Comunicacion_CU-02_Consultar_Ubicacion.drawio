@@ -1,0 +1,80 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="CU-02 Consultar ubicación" id="0">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=#000000;fillColor=#ffffff;" value="Usuario Final" vertex="1">
+          <mxGeometry height="60" width="180" x="80" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=#000000;fillColor=#ffffff;" value="Interfaz Web" vertex="1">
+          <mxGeometry height="60" width="190" x="390" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=#000000;fillColor=#ffffff;" value="VehiculoController" vertex="1">
+          <mxGeometry height="60" width="210" x="810" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=#000000;fillColor=#ffffff;" value="Vehiculo" vertex="1">
+          <mxGeometry height="60" width="190" x="810" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=#000000;fillColor=#ffffff;" value="Supabase / PostgreSQL" vertex="1">
+          <mxGeometry height="60" width="230" x="1150" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="7" edge="1" parent="1" source="2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="3" value="1: seleccionarVehiculo(idVehiculo)">
+          <mxGeometry relative="1" x="0.0119" y="-10" as="geometry">
+            <mxPoint x="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8" edge="1" parent="1" source="3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="4" value="1.1: solicitarUbicacion(idVehiculo)">
+          <mxGeometry relative="1" x="0.0435" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="690" y="130" />
+              <mxPoint x="690" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9" edge="1" parent="1" source="4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="5" value="1.1.1: obtenerUbicacion(idVehiculo)">
+          <mxGeometry relative="1" x="-0.2" y="95" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="905.05" y="260" />
+              <mxPoint x="905.05" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="10" edge="1" parent="1" source="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="6" value="1.1.1.1: consultarUltimaUbicacion(idVehiculo)">
+          <mxGeometry relative="1" x="0.0119" y="-10" as="geometry">
+            <mxPoint x="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="11" edge="1" parent="1" source="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="5" value="1.1.1.2: retornarUbicacion(latitud, longitud, coordenadas, fechaHora)">
+          <mxGeometry relative="1" x="-0.6455" y="20" as="geometry">
+            <mxPoint x="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" edge="1" parent="1" source="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="4" value="1.1.2: retornarUbicacion(coordenadas)">
+          <mxGeometry relative="1" x="0.3529" y="50" as="geometry">
+            <mxPoint y="-1" as="offset" />
+            <Array as="points">
+              <mxPoint x="890" y="430" />
+              <mxPoint x="890" y="430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="13" edge="1" parent="1" source="4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="3" value="1.2: enviarUbicacion(coordenadas)">
+          <mxGeometry relative="1" x="0.0435" y="20" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="14" edge="1" parent="1" source="3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="2" value="2: mostrarUbicacionMapa(coordenadas)">
+          <mxGeometry relative="1" x="-0.0244" y="-10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="15" parent="1" style="shape=note;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=6;strokeColor=#000000;fillColor=#fff2cc;" value="Escenario alternativo:&#xa;Si no existe una ubicación disponible, la interfaz informa al Usuario Final que la ubicación no se encuentra disponible." vertex="1">
+          <mxGeometry height="180" width="330" x="430" y="460" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
