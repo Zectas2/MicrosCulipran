@@ -1,0 +1,83 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="CU-16 Visualizar dashboard" id="0">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=#000000;fillColor=#ffffff;" value="Administrador" vertex="1">
+          <mxGeometry height="60" width="180" x="80" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=#000000;fillColor=#ffffff;" value="Interfaz Administrativa" vertex="1">
+          <mxGeometry height="60" width="230" x="390" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=#000000;fillColor=#ffffff;" value="DashboardController" vertex="1">
+          <mxGeometry height="60" width="220" x="870" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=#000000;fillColor=#ffffff;" value="Indicador" vertex="1">
+          <mxGeometry height="60" width="190" x="870" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=#000000;fillColor=#ffffff;" value="Supabase / PostgreSQL" vertex="1">
+          <mxGeometry height="60" width="230" x="1210" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="7" edge="1" parent="1" source="2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="3" value="1: solicitarDashboard()">
+          <mxGeometry relative="1" x="0.0114" y="-10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8" edge="1" parent="1" source="3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="4" value="1.1: obtenerDashboard()">
+          <mxGeometry relative="1" x="-0.04" y="-10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9" edge="1" parent="1" source="4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="5" value="1.1.1: obtenerIndicadores()">
+          <mxGeometry relative="1" x="-0.5362" y="80" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="970" y="430" />
+              <mxPoint x="970" y="430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="10" edge="1" parent="1" source="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="6" value="1.1.1.1: consultarDatosOperacionales()">
+          <mxGeometry relative="1" x="0.0119" y="-10" as="geometry">
+            <mxPoint x="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="11" edge="1" parent="1" source="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="5" value="1.1.1.2: retornarDatos()">
+          <mxGeometry relative="1" x="-0.291" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="970" y="370" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" edge="1" parent="1" source="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="4" value="1.1.2: retornarIndicadores()">
+          <mxGeometry relative="1" x="0.324" y="70" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="950" y="430" />
+              <mxPoint x="950" y="430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="13" edge="1" parent="1" source="4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="3" value="1.2: enviarDashboard(indicadores)">
+          <mxGeometry relative="1" x="0.04" y="-20" as="geometry">
+            <mxPoint x="1" as="offset" />
+            <Array as="points">
+              <mxPoint x="750" y="130" />
+              <mxPoint x="750" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="14" edge="1" parent="1" source="3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;" target="2" value="2: mostrarDashboard()">
+          <mxGeometry relative="1" x="-0.0244" y="-10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="15" parent="1" style="shape=note;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=6;strokeColor=#000000;fillColor=#fff2cc;" value="Escenario alternativo:&#xa;Si no existen datos suficientes, se muestra el dashboard con la información disponible." vertex="1">
+          <mxGeometry height="180" width="330" x="460" y="480" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
