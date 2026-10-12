@@ -13,33 +13,37 @@
 
 <body class="bg-fondo font-sans antialiased text-texto min-h-screen flex flex-col">
 
-    <!-- Navegación Base Adaptable -->
-    <nav class="bg-primario shadow-md relative z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- Icono de Menú (Hamburguesa) -->
-                <button onclick="toggleMenu()" class="text-secundario hover:text-gray-200 focus:outline-none">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
+    <!-- Barra de Navegación Superior -->
+    <header class="bg-primario text-secundario px-4 py-3 flex items-center justify-between relative shadow-md">
 
-                <!-- Logotipo Central -->
-                <div class="flex flex-col items-center justify-center">
-                    <span class="text-secundario font-bold text-lg leading-tight">Micros</span>
-                    <span class="text-secundario font-extrabold text-xl leading-none tracking-widest uppercase">Culiprán</span>
-                </div>
+        <!-- Botón Menú Lateral (Izquierda) -->
+        <button type="button" onclick="toggleMenu()" class="p-2 hover:bg-secundario/10 rounded-lg transition-colors">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
 
-                <!-- Icono de Notificaciones -->
-                <a href="/notificaciones" class="relative text-secundario hover:text-gray-200 focus:outline-none active:scale-95 transition-transform">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                    </svg>
-                    <span class="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-peligro ring-2 ring-primario"></span>
-                </a>
-            </div>
-        </div>
-    </nav>
+        <!-- Título Principal (Centro Absoluto) -->
+        <a href="/" class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center text-center">
+            <span class="text-[13px] font-bold leading-tight tracking-wide">Micros</span>
+            <span class="text-xl font-black leading-tight tracking-widest">CULIPRÁN</span>
+        </a>
+
+        <!-- Campana de Notificaciones (Derecha) -->
+        <a href="{{ route('notificaciones.index') }}" class="relative p-2 hover:bg-secundario/10 rounded-full transition-colors">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+            </svg>
+
+            <!-- Indicador dinámico de notificaciones -->
+            @if(isset($tieneNotificacionesRecientes) && $tieneNotificacionesRecientes)
+            <span class="absolute top-1 right-2 flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-peligro opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-peligro border-2 border-primario"></span>
+            </span>
+            @endif
+        </a>
+    </header>
 
     <!-- Contenedor Principal Dinámico -->
     <main class="flex-grow max-w-7xl mx-auto w-full py-6 px-4 sm:px-6 lg:px-8 relative z-10">

@@ -30,7 +30,9 @@
                 <h2>Estado del Servicio</h2>
             </div>
             <!-- Etiqueta dinámica de estado -->
-            <span class="bg-acento/10 text-acento border border-acento/20 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider">Operativo</span>
+            <span class="{{ $estadoGeneral === 'Operativo' ? 'bg-acento/10 text-acento border-acento/20' : 'bg-gray-100 text-gray-500 border-gray-200' }} border px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider">
+                {{ $estadoGeneral }}
+            </span>
         </div>
 
         <div class="bg-fondo rounded-xl p-3 border border-gray-200 flex justify-between items-center">
@@ -39,8 +41,10 @@
                 <p class="text-sm font-black text-texto">Melipilla &rarr; Culiprán</p>
             </div>
             <div class="text-right border-l border-gray-300 pl-3">
-                <p class="text-[10px] text-texto/60 font-bold uppercase tracking-wide">Próxima Micro</p>
-                <p class="text-sm font-black text-primario">En 12 min</p>
+                <p class="text-[10px] text-texto/60 font-bold uppercase tracking-wide">{{ $etiquetaSuperior }}</p>
+                <p class="text-sm font-black {{ $tiempoRestante === 'Sin programar' || $tiempoRestante === 'Sin más salidas hoy' ? 'text-texto/60' : 'text-primario' }}">
+                    {{ $tiempoRestante }}
+                </p>
             </div>
         </div>
     </div>
@@ -99,16 +103,7 @@
         </a>
     </div>
 
-    <!-- Tarjeta de Información Importante -->
-    <div class="mt-6 bg-acento/10 rounded-xl p-4 flex items-start border border-acento/30">
-        <svg class="w-6 h-6 text-acento shrink-0 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <div>
-            <h4 class="font-bold text-texto text-sm">Información importante</h4>
-            <p class="text-xs text-texto/80 mt-1 leading-relaxed">Mantente informado sobre cambios de horarios y novedades aquí.</p>
-        </div>
-    </div>
+
 
 </div>
 @endsection

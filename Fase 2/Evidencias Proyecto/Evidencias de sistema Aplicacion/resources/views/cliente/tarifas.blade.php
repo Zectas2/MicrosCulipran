@@ -10,38 +10,38 @@
     </div>
 
     <div class="space-y-4">
-        <!-- Tarjeta General -->
-        <div class="bg-secundario p-5 rounded-2xl shadow-sm border-l-4 border-primario">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="font-bold text-texto text-lg">Pasaje General</h3>
-                    <p class="text-xs text-texto/60">Recorrido completo</p>
-                </div>
-                <span class="text-2xl font-black text-primario">$1.200</span>
-            </div>
-        </div>
+        @forelse($tarifas as $tarifa)
+            @php
+                $borderColor = match($tarifa->tipo_tarifa) {
+                    'Escolar' => 'border-gray-400',
+                    'Adulto Mayor' => 'border-acento',
+                    default => 'border-primario'
+                };
+                
+                $textColor = match($tarifa->tipo_tarifa) {
+                    'Escolar' => 'text-gray-600',
+                    'Adulto Mayor' => 'text-acento',
+                    default => 'text-primario'
+                };
+            @endphp
 
-        <!-- Tarjeta Local -->
-        <div class="bg-secundario p-5 rounded-2xl shadow-sm border-l-4 border-acento">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="font-bold text-texto text-lg">Pasaje Local</h3>
-                    <p class="text-xs text-texto/60">Tramos cortos intermedios</p>
+            <!-- Tarjeta Dinámica -->
+            <div class="bg-secundario p-5 rounded-2xl shadow-sm border-l-4 {{ $borderColor }}">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-texto text-lg">{{ $tarifa->punto_origen }} - {{ $tarifa->punto_destino }}</h3>
+                        <p class="text-xs text-texto/60">Pasaje {{ $tarifa->tipo_tarifa }}</p>
+                    </div>
+                    <span class="text-2xl font-black {{ $textColor }}">
+                        ${{ number_format($tarifa->precio, 0, ',', '.') }}
+                    </span>
                 </div>
-                <span class="text-2xl font-black text-acento">$600</span>
             </div>
-        </div>
-
-        <!-- Tarjeta Estudiante -->
-        <div class="bg-secundario p-5 rounded-2xl shadow-sm border-l-4 border-gray-400">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="font-bold text-texto text-lg">Estudiante</h3>
-                    <p class="text-xs text-texto/60">Con TNE vigente</p>
-                </div>
-                <span class="text-2xl font-black text-texto/80">$400</span>
+        @empty
+            <div class="bg-secundario p-5 rounded-2xl shadow-sm border-l-4 border-red-500">
+                <p class="text-texto text-center font-bold">No hay tarifas registradas en este momento.</p>
             </div>
-        </div>
+        @endforelse
     </div>
     
     <div class="mt-8 bg-acento/10 rounded-xl p-4 flex items-start">

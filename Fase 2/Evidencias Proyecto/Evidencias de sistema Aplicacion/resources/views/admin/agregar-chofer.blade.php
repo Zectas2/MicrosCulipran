@@ -11,27 +11,41 @@
         <h1 class="text-xl font-extrabold text-texto">Registrar Chofer</h1>
     </div>
 
+    <!-- Bloque para mostrar errores de validación -->
+    @if ($errors->any())
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative shadow-sm">
+        <ul class="list-disc pl-5 text-xs font-bold">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
-        <form class="space-y-4">
+        <!-- Formulario configurado con POST y atributos name -->
+        <form method="POST" action="{{ route('admin.choferes.store') }}" class="space-y-4">
+            @csrf
+
             <div>
                 <label class="block text-xs font-bold text-texto/70 uppercase tracking-wider mb-1">Nombre Completo</label>
-                <input type="text" placeholder="Ej: Juan Pérez González" class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
+                <input type="text" name="nombre" required placeholder="Ej: Juan Pérez González" class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
             </div>
             <div>
                 <label class="block text-xs font-bold text-texto/70 uppercase tracking-wider mb-1">RUT</label>
-                <input type="text" placeholder="Ej: 12.345.678-9" class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
+                <input type="text" name="rut" required placeholder="Ej: 12.345.678-9" class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-texto/70 uppercase tracking-wider mb-1">Edad</label>
-                    <input type="number" placeholder="Ej: 45" class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
+                    <input type="number" name="edad" required placeholder="Ej: 45" class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-texto/70 uppercase tracking-wider mb-1">Teléfono</label>
-                    <input type="tel" placeholder="Ej: +56 9 1234 5678" class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
+                    <input type="tel" name="telefono" required placeholder="Ej: +56 9 1234 5678" class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
                 </div>
             </div>
-            <button type="button" class="w-full bg-primario text-secundario font-black py-4 rounded-xl shadow-md active:scale-95 transition-transform mt-4">
+            <button type="submit" class="w-full bg-primario text-secundario font-black py-4 rounded-xl shadow-md active:scale-95 transition-transform mt-4">
                 Guardar Chofer
             </button>
         </form>

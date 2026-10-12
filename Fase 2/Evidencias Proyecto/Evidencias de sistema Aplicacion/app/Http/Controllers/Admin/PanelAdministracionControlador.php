@@ -3,54 +3,64 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Vehiculo;
-use App\Models\User;
-use App\Models\Ruta;
-use App\Models\Recorrido;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PanelAdministracionControlador extends Controller
 {
-    // Dashboard Principal del Administrador (RF-016)
     public function index()
     {
-        // Estadísticas operacionales básicas para el dashboard
-        $totalVehiculos = Vehiculo::count();
-        $totalConductores = User::where('rol', 'conductor')->count();
-        $totalRutas = Ruta::count();
-        $recorridosActivos = Recorrido::where('estado', 'en_curso')->count();
+        $hoy = Carbon::today('America/Santiago');
 
-        return view('admin.index', compact(
-            'totalVehiculos',
-            'totalConductores',
-            'totalRutas',
-            'recorridosActivos'
-        ));
-    }
+        // Cálculo de KPIs
+        $microsEnRuta = DB::table('recorridos')->where('estado', 'en_ruta')->count();
+        $recorridosHoy = DB::table('recorridos')->whereDate('hora_salida', $hoy)->count();
+        $alertas = DB::table('vehiculos')->whereIn('estado', ['en_mantencion', 'fuera_de_servicio'])->count();
 
-    // Listado de Micros/Vehículos
-    public function listarMicros()
-    {
-        $vehiculos = Vehiculo::all();
-        return view('admin.micros', compact('vehiculos'));
-    }
+        // Monitoreo de Flota Activa
+        $flotaActiva = DB::table('recorridos')
+            ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
+            ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
+            ->whereDate('recorridos.hora_salida', $hoy)
+            ->where('recorridos.estado', '!=', 'finalizado') // <-- Filtro de exclusión aplicado aquí
+            ->select(
+                'vehiculos.patente',
+                'vehiculos.estado as estado_vehiculo',
+                'usuarios.nombre as conductor',
+                'recorridos.hora_salida',
+                'recorridos.estado as estado_recorrido'
+            )
+            ->orderBy('recorridos.hora_salida', 'desc')
+            ->get()
+            ->map(function ($recorrido) {
+                $isError = in_array($recorrido->estado_vehiculo, ['en_mantencion', 'fuera_de_servicio']);
 
-    // Listado de Choferes/Conductores
-    public function listarChoferes()
-    {
-        $choferes = User::where('rol', 'conductor')->get();
-        return view('admin.choferes', compact('choferes'));
-    }
+                $recorrido->bgColor = $isError ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-fondo';
+                $recorrido->iconBg = $isError ? 'bg-peligro/10 border-peligro/20' : 'bg-acento/10 border-transparent';
+                $recorrido->iconColor = $isError ? 'text-peligro' : 'text-acento';
+                $recorrido->badgeClass = $isError ? 'bg-peligro text-secundario animate-pulse' : 'bg-acento/10 border border-acento/20 text-acento';
+                $recorrido->bordeClase = $isError ? 'border-peligro/30' : 'border-gray-200';
+                $recorrido->textoTiempoClase = $isError ? 'text-peligro' : 'text-primario';
 
-    // Vista de Mapa Operativo Administrativo
-    public function mapa()
-    {
-        return view('admin.mapa');
-    }
+                $recorrido->textoEstado = ucwords(str_replace('_', ' ', $recorrido->estado_recorrido));
 
-    // Vista de Inteligencia de Negocios / Indicadores (RF-014, RF-016)
-    public function bi()
-    {
-        return view('admin.bi');
+                $horaParseada = Carbon::parse($recorrido->hora_salida)->timezone('America/Santiago');
+                $recorrido->horaSalidaFormateada = $horaParseada->format('H:i');
+
+                // Lógica condicional para el tiempo en ruta
+                if (in_array($recorrido->estado_recorrido, ['asignado', 'programado'])) {
+                    $recorrido->etiquetaTiempo = 'Estado Operativo';
+                    $recorrido->valorTiempo = 'En Espera';
+                    $recorrido->textoTiempoClase = 'text-gray-500';
+                } else {
+                    $recorrido->etiquetaTiempo = 'Tiempo en Ruta';
+                    $recorrido->valorTiempo = (int) round($horaParseada->diffInMinutes(now('America/Santiago'))) . ' min';
+                    $recorrido->textoTiempoClase = $isError ? 'text-peligro' : 'text-primario';
+                }
+
+                return $recorrido;
+            });
+
+        return view('admin.index', compact('microsEnRuta', 'recorridosHoy', 'alertas', 'flotaActiva'));
     }
 }
