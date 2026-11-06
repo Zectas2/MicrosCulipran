@@ -31,22 +31,15 @@
 
 <script>
     window.initMap = function() {
-        // Configuraciones base
+        // Centro predeterminado por si el usuario rechaza el GPS (Melipilla/Culiprán)
         const culipranCenter = {
-            lat: -33.7450,
-            lng: -71.2280
+            lat: -33.689,
+            lng: -71.215
         };
 
-        // Ubicación actual simulada del usuario (El Molino)
-        const ubicacionUsuario = {
-            lat: -33.780303,
-            lng: -71.242930
-        };
-        const destinoUsuario = "Melipilla";
-
-        // Inicialización del Mapa con gestureHandling para permitir un solo dedo
+        // Inicialización del Mapa
         const map = new google.maps.Map(document.getElementById("map"), {
-            zoom: 12,
+            zoom: 13,
             center: culipranCenter,
             mapId: "DEMO_MAP_ID",
             disableDefaultUI: false,
@@ -54,174 +47,104 @@
             mapTypeControl: false,
             streetViewControl: false,
             fullscreenControl: false,
-            gestureHandling: 'greedy' // <--- Esto desactiva el requerimiento de los dos dedos
+            gestureHandling: 'greedy'
         });
 
-        const distanceMatrixService = new google.maps.DistanceMatrixService();
-        const directionsService = new google.maps.DirectionsService();
-        const directionsRenderer = new google.maps.DirectionsRenderer({
-            map: map,
-            suppressMarkers: true,
-            polylineOptions: {
-                strokeColor: '#0284c7',
-                strokeOpacity: 0.8,
-                strokeWeight: 5
-            }
-        });
+        // 1. RASTREO DEL USUARIO (Local)
+        let marcadorUsuario = null;
 
-        // 1. Trazado de la ruta en el mapa a partir del arreglo inyectado por Laravel
-        const rutaCoordenadasJSON = @json($coordenadasArray ?? []);
+        if ("geolocation" in navigator) {
+            // watchPosition solicita permiso automáticamente y rastrea cambios constantes
+            navigator.geolocation.watchPosition(
+                (posicion) => {
+                    const ubicacionActual = {
+                        lat: posicion.coords.latitude,
+                        lng: posicion.coords.longitude
+                    };
 
-        if (rutaCoordenadasJSON && rutaCoordenadasJSON.length > 0) {
+                    if (!marcadorUsuario) {
+                        // Creación del marcador del usuario si es la primera vez que detecta señal
+                        const usuarioDiv = document.createElement("div");
+                        usuarioDiv.innerHTML = `<div style="width: 16px; height: 16px; background-color: #ef4444; border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`;
 
-            // Crear marcadores visuales MODERNIZADOS (AdvancedMarkerElement) para cada paradero
-            rutaCoordenadasJSON.forEach(punto => {
+                        marcadorUsuario = new google.maps.marker.AdvancedMarkerElement({
+                            position: ubicacionActual,
+                            map: map,
+                            title: "Su Ubicación",
+                            content: usuarioDiv
+                        });
 
-                const paraderoDiv = document.createElement("div");
-                paraderoDiv.innerHTML = `<div style="width: 12px; height: 12px; background-color: #ffffff; border: 2px solid #0284c7; border-radius: 50%;"></div>`;
-
-                new google.maps.marker.AdvancedMarkerElement({
-                    position: {
-                        lat: punto.lat,
-                        lng: punto.lng
-                    },
-                    map: map,
-                    title: punto.nombre,
-                    content: paraderoDiv
-                });
-            });
-
-            // Generar las paradas intermedias (Waypoints) excluyendo el inicio y el fin
-            const waypoints = rutaCoordenadasJSON.slice(1, -1).map(punto => ({
-                location: new google.maps.LatLng(punto.lat, punto.lng),
-                stopover: true
-            }));
-
-            // Solicitar a Google que dibuje la línea azul por las calles
-            directionsService.route({
-                origin: new google.maps.LatLng(rutaCoordenadasJSON[0].lat, rutaCoordenadasJSON[0].lng),
-                destination: new google.maps.LatLng(rutaCoordenadasJSON[rutaCoordenadasJSON.length - 1].lat, rutaCoordenadasJSON[rutaCoordenadasJSON.length - 1].lng),
-                waypoints: waypoints,
-                travelMode: google.maps.TravelMode.DRIVING
-            }, (response, status) => {
-                if (status === "OK") {
-                    directionsRenderer.setDirections(response);
+                        // Centramos la cámara en el usuario la primera vez que lo encuentra
+                        map.setCenter(ubicacionActual);
+                    } else {
+                        // Si ya existe, simplemente actualizamos su posición en el mapa
+                        marcadorUsuario.position = ubicacionActual;
+                    }
+                },
+                (error) => {
+                    console.warn("Señal GPS del pasajero denegada o no disponible. El mapa mostrará las micros de todos modos.", error);
+                }, {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
                 }
-            });
+            );
         }
 
-        // Marcador visual del Usuario MODERNIZADO (AdvancedMarkerElement)
-        const usuarioDiv = document.createElement("div");
-        usuarioDiv.innerHTML = `<div style="width: 16px; height: 16px; background-color: #ef4444; border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`;
+        // 2. RASTREO DE LA FLOTA (Vía Laravel Reverb)
+        const flotaActiva = {};
 
-        new google.maps.marker.AdvancedMarkerElement({
-            position: ubicacionUsuario,
-            map: map,
-            title: "Su Paradero",
-            content: usuarioDiv
-        });
+        setTimeout(() => {
+            if (window.Echo) {
+                console.log("Conectado al radar de Laravel Reverb. Esperando coordenadas...");
 
-        // 2. Micros en tiempo real (Lógica de filtrado y tiempo retenida)
-        const activeBuses = [{
-                id: "Micro 01",
-                lat: -33.69135016609804,
-                lng: -71.21672129818464,
-                status: "Hacia Culiprán",
-                horarioSalida: "13:15 hrs",
-                direccion: "Culipran"
-            },
-            {
-                id: "Micro 02",
-                lat: -33.77430209935964,
-                lng: -71.24064190190211,
-                status: "Hacia Melipilla Centro",
-                horarioSalida: "13:30 hrs",
-                direccion: "Melipilla"
-            }
-        ];
+                window.Echo.channel('flota-vivo')
+                    .listen('.PosicionActualizada', (evento) => {
 
-        activeBuses.forEach(bus => {
-            const colorMicro = bus.direccion === "Melipilla" ? "#0284c7" : "#16a34a";
+                        // Si la micro ya existe, animamos su nueva posición
+                        if (flotaActiva[evento.vehiculoId]) {
+                            flotaActiva[evento.vehiculoId].position = new google.maps.LatLng(evento.latitud, evento.longitud);
+                        } else {
+                            // Si no existe, creamos su marcador
+                            const colorMicro = "#0284c7"; // Azul corporativo
 
-            const iconDiv = document.createElement("div");
-            iconDiv.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="${colorMicro}" stroke="#ffffff" stroke-width="1.5" class="drop-shadow-md"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg>`;
+                            const iconDiv = document.createElement("div");
+                            iconDiv.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="${colorMicro}" stroke="#ffffff" stroke-width="1.5" class="drop-shadow-md"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg>`;
 
-            const marker = new google.maps.marker.AdvancedMarkerElement({
-                position: {
-                    lat: bus.lat,
-                    lng: bus.lng
-                },
-                map: map,
-                title: bus.id,
-                content: iconDiv
-            });
+                            const marker = new google.maps.marker.AdvancedMarkerElement({
+                                position: {
+                                    lat: parseFloat(evento.latitud),
+                                    lng: parseFloat(evento.longitud)
+                                },
+                                map: map,
+                                title: evento.patente,
+                                content: iconDiv
+                            });
 
-            const infoWindow = new google.maps.InfoWindow();
-
-            // Corrección: Usamos addEventListener nativo en el elemento DOM del marcador en lugar de addListener
-            marker.element.addEventListener("click", () => {
-                const esDireccionCorrecta = bus.direccion === destinoUsuario;
-
-                let infoHTML = `
-                    <div class="p-2 min-w-[160px]">
-                        <strong class="text-sm text-gray-800">${bus.id}</strong>
-                        <div class="text-xs text-gray-600 mt-1 pb-1 border-b border-gray-200">${bus.status}</div>
-                        <div class="text-xs font-semibold text-gray-700 mt-2">
-                            <span class="text-gray-500 font-normal">Salida:</span> ${bus.horarioSalida}
-                        </div>
-                `;
-
-                if (!esDireccionCorrecta) {
-                    infoHTML += `
-                        <div class="text-xs font-bold text-gray-400 mt-2">
-                            Vehículo en dirección opuesta
-                        </div>
-                    </div>`;
-                    infoWindow.setContent(infoHTML);
-                    infoWindow.open(map, marker);
-                } else {
-                    infoHTML += `
-                        <div class="text-xs font-semibold text-primario mt-1 animate-pulse">
-                            <span class="text-gray-500 font-normal">Evaluando posición...</span>
-                        </div>
-                    </div>`;
-                    infoWindow.setContent(infoHTML);
-                    infoWindow.open(map, marker);
-
-                    distanceMatrixService.getDistanceMatrix({
-                        origins: [{
-                            lat: bus.lat,
-                            lng: bus.lng
-                        }],
-                        destinations: [ubicacionUsuario],
-                        travelMode: google.maps.TravelMode.DRIVING,
-                    }, (response, status) => {
-                        if (status === "OK" && response.rows[0].elements[0].status === "OK") {
-                            const tiempoEnSegundos = response.rows[0].elements[0].duration.value;
-                            const tiempoEstimadoTexto = response.rows[0].elements[0].duration.text;
-                            let mensajeLlegada = `<span class="text-gray-500 font-normal">Llegada en:</span> ${tiempoEstimadoTexto}`;
-
-                            if (tiempoEnSegundos > 1800) {
-                                mensajeLlegada = `<span class="text-red-500">El vehículo ya pasó su ubicación</span>`;
-                            }
-
-                            infoWindow.setContent(`
-                                <div class="p-2 min-w-[160px]">
-                                    <strong class="text-sm text-gray-800">${bus.id}</strong>
-                                    <div class="text-xs text-gray-600 mt-1 pb-1 border-b border-gray-200">${bus.status}</div>
-                                    <div class="text-xs font-semibold text-gray-700 mt-2">
-                                        <span class="text-gray-500 font-normal">Salida:</span> ${bus.horarioSalida}
+                            // Cuadro de información al tocar la micro (Sin cálculo de API)
+                            const infoWindow = new google.maps.InfoWindow();
+                            marker.element.addEventListener("click", () => {
+                                infoWindow.setContent(`
+                                    <div class="p-2 min-w-[120px]">
+                                        <strong class="text-sm text-gray-800">${evento.patente}</strong>
+                                        <div class="text-xs font-semibold text-gray-700 mt-1">
+                                            <span class="text-gray-500 font-normal">Velocidad:</span> ${evento.velocidad} km/h
+                                        </div>
                                     </div>
-                                    <div class="text-xs font-bold text-primario mt-1">
-                                        ${mensajeLlegada}
-                                    </div>
-                                </div>
-                            `);
+                                `);
+                                infoWindow.open(map, marker);
+                            });
+
+                            flotaActiva[evento.vehiculoId] = marker;
+
+                            // Actualizar el contador visual
+                            document.getElementById('micros-counter').innerText = `${Object.keys(flotaActiva).length} Micros en ruta`;
                         }
                     });
-                }
-            });
-        });
+            } else {
+                console.error("El radar (Laravel Echo) no está disponible. Asegúrese de importar Vite en su layout.");  
+            }
+        }, 500);
     };
 </script>
 

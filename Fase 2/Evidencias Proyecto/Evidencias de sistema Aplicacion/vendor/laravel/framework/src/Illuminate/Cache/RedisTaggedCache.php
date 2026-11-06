@@ -74,6 +74,31 @@ class RedisTaggedCache extends TaggedCache
     }
 
     /**
+     * Set the expiration of a cached item.
+     *
+     * @param  \UnitEnum|string  $key
+     * @param  \DateTimeInterface|\DateInterval|int  $ttl
+     * @return bool
+     */
+    public function touch($key, $ttl)
+    {
+        $key = enum_value($key);
+
+        $seconds = $this->getSeconds($ttl);
+
+        $result = parent::touch($key, $ttl);
+
+        if ($result && $seconds > 0) {
+            $this->tags->addEntry(
+                $this->itemKey($key),
+                $seconds
+            );
+        }
+
+        return $result;
+    }
+
+    /**
      * Increment the value of an item in the cache.
      *
      * @param  \UnitEnum|string  $key
@@ -156,12 +181,6 @@ class RedisTaggedCache extends TaggedCache
 
         $cachePrefix = $redisPrefix.$this->store->getPrefix();
 
-        $cacheTags = [];
-
-        foreach ($this->tags->getNames() as $name) {
-            $cacheTags[] = $cachePrefix.$this->tags->tagId($name);
-        }
-
         $script = <<<'LUA'
             local prefix = table.remove(ARGV, 1)
 
@@ -177,17 +196,19 @@ class RedisTaggedCache extends TaggedCache
 
         $prefix = $this->store->getPrefix();
 
-        $entries = $this->tags->entries()
-            ->map(fn (string $key) => $prefix.$key)
-            ->chunk(1000);
+        foreach ($this->tags->getNames() as $name) {
+            $entries = (new RedisTagSet($this->store, [$name]))->entries()
+                ->map(fn (string $key) => $prefix.$key)
+                ->chunk(1000);
 
-        foreach ($entries as $keysToBeDeleted) {
-            $connection->eval(
-                $script,
-                count($keysToBeDeleted),
-                ...$keysToBeDeleted,
-                ...[str_replace('-', '%-', $cachePrefix), ...$cacheTags]
-            );
+            foreach ($entries as $keysToBeDeleted) {
+                $connection->eval(
+                    $script,
+                    count($keysToBeDeleted),
+                    ...$keysToBeDeleted,
+                    ...[str_replace('-', '%-', $cachePrefix), $cachePrefix.$this->tags->tagId($name)]
+                );
+            }
         }
 
         $this->event(new CacheFlushed($this->getName()));

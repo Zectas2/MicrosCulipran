@@ -360,6 +360,8 @@ class SqsQueue extends Queue implements QueueContract, ClearableQueue
      */
     public function bulk($jobs, $data = '', $queue = null)
     {
+        $queue = enum_value($queue);
+
         $jobs = array_values((array) $jobs);
 
         if (empty($jobs)) {
@@ -605,7 +607,9 @@ class SqsQueue extends Queue implements QueueContract, ClearableQueue
 
         if ($isObject) {
             $messageGroupId = transform($job->messageGroup ?? (method_exists($job, 'messageGroup') ? $job->messageGroup() : null), $transformToString);
-        } elseif ($isFifo) {
+        }
+
+        if ($isFifo && is_null($messageGroupId)) {
             $messageGroupId = transform($queue, $transformToString);
         }
 

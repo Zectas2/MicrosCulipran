@@ -150,4 +150,57 @@ $vueltasTotales = $turnosHoy->count();
     </div>
 
 </div>
+
+<!-- Motor de Telemetría GPS en Tiempo Real -->
+    @if($turnoActual && $turnoActual->estado === 'en_ruta')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if ("geolocation" in navigator) {
+                // Configuramos el GPS para máxima precisión (Consume más batería pero es exacto)
+                const opcionesGps = {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                };
+
+                // watchPosition mantiene el GPS encendido y escuchando cambios de ubicación
+                const watchId = navigator.geolocation.watchPosition(
+                    function(posicion) {
+                        const latitud = posicion.coords.latitude;
+                        const longitud = posicion.coords.longitude;
+                        // Algunos dispositivos móviles entregan la velocidad en metros por segundo
+                        const velocidad = posicion.coords.speed ? (posicion.coords.speed * 3.6).toFixed(2) : 0; 
+
+                        // Transmitimos de forma silenciosa al servidor
+                        fetch("{{ route('conductor.telemetria', $turnoActual->id) }}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                                "Accept": "application/json"
+                            },
+                            body: JSON.stringify({
+                                lat: latitud,
+                                lng: longitud,
+                                velocidad: velocidad
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => console.log('Transmisión exitosa:', data))
+                        .catch(error => console.error('Error de transmisión:', error));
+                    },
+                    function(error) {
+                        console.warn('Señal GPS perdida o denegada:', error.message);
+                    },
+                    opcionesGps
+                );
+
+                // Nota de seguridad: Al cerrar la pestaña o finalizar la ruta, 
+                // el navegador automáticamente destruye este proceso (clearWatch).
+            } else {
+                alert("El navegador de su dispositivo no soporta la lectura satelital GPS.");
+            }
+        });
+    </script>
+    @endif
 @endsection

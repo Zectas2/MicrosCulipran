@@ -92,4 +92,72 @@ class PanelControlador extends Controller
 
         return back()->with('error', 'No se pudo finalizar la ruta.');
     }
+
+    // Asegúrese de agregar este import en la parte superior del archivo si no está:
+    // use App\Events\UbicacionTransmitida;
+    
+    public function transmitirUbicacion(Request $request, $id)
+    {
+        $request->validate([
+            'lat' => 'required|numeric',
+            'lng' => 'required|numeric',
+            'velocidad' => 'nullable|numeric'
+        ]);
+
+        $conductorId = Auth::id();
+
+        // 1. Validamos que el recorrido exista, esté en ruta y pertenezca al conductor actual
+        $recorrido = DB::table('recorridos')
+            ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
+            ->where('recorridos.id', $id)
+            ->where('recorridos.conductor_id', $conductorId)
+            ->where('recorridos.estado', 'en_ruta')
+            ->select('recorridos.id as recorrido_id', 'vehiculos.id as vehiculo_id', 'vehiculos.patente')
+            ->first();
+
+        if (!$recorrido) {
+            return response()->json(['error' => 'Recorrido no válido o inactivo'], 403);
+        }
+
+        // 2. Emitimos el evento de WebSocket instantáneo para los pasajeros
+        event(new \App\Events\UbicacionTransmitida(
+            $recorrido->recorrido_id,
+            $recorrido->vehiculo_id,
+            $recorrido->patente,
+            $request->lat,
+            $request->lng,
+            $request->velocidad
+        ));
+
+        // 3. Estrategia de optimización (Inteligencia de Negocios): 
+        // Solo guardamos en la base de datos si ha pasado más de 1 minuto desde el último registro
+        $ultimoRegistro = DB::table('ubicacion_vehiculos')
+            ->where('recorrido_id', $recorrido->recorrido_id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $guardarEnBD = false;
+
+        if (!$ultimoRegistro) {
+            $guardarEnBD = true;
+        } else {
+            $ultimaVez = Carbon::parse($ultimoRegistro->created_at);
+            if (Carbon::now('America/Santiago')->diffInSeconds($ultimaVez) >= 60) {
+                $guardarEnBD = true;
+            }
+        }
+
+        if ($guardarEnBD) {
+            DB::table('ubicacion_vehiculos')->insert([
+                'recorrido_id' => $recorrido->recorrido_id,
+                'latitud' => $request->lat,
+                'longitud' => $request->lng,
+                'velocidad' => $request->velocidad ?? 0,
+                'created_at' => Carbon::now('America/Santiago'),
+                'updated_at' => Carbon::now('America/Santiago')
+            ]);
+        }
+
+        return response()->json(['status' => 'Ubicación transmitida y procesada correctamente']);
+    }
 }

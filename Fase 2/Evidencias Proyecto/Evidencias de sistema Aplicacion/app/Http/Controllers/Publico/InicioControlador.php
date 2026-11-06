@@ -14,15 +14,11 @@ class InicioControlador extends Controller
         $ahora = Carbon::now('America/Santiago');
         $hoy = $ahora->toDateString();
 
-        // 1. Ampliamos el filtro: Buscamos todo lo que NO haya terminado y NO esté circulando,
-        // evitando errores si la palabra 'asignado' no es la correcta.
         $recorridosPendientes = Recorrido::where('estado', '!=', 'finalizado')
             ->where('estado', '!=', 'en_ruta')
             ->orderBy('hora_salida', 'asc')
             ->get();
 
-        // 2. Tolerancia temporal: Aceptamos mostrar recorridos que debieron salir hasta hace 20 minutos
-        // (ideal para contemplar retrasos en el terminal)
         $limiteTolerancia = $ahora->copy()->subMinutes(20);
 
         $proximaMicro = $recorridosPendientes->first(function ($recorrido) use ($limiteTolerancia) {
@@ -38,14 +34,14 @@ class InicioControlador extends Controller
             $estadoGeneral = 'Operativo';
             $horaSalidaReal = Carbon::parse($proximaMicro->hora_salida)->setTimezone('America/Santiago');
 
-            // Calculamos la diferencia real con el momento ACTUAL
-            $minutosFaltantes = $ahora->diffInMinutes($horaSalidaReal, false);
+            // Aplicamos un redondeo matemático estricto para eliminar los decimales
+            $minutosFaltantes = (int) round($ahora->diffInMinutes($horaSalidaReal, false));
 
             if ($horaSalidaReal->isSameDay($ahora)) {
                 if ($minutosFaltantes > 60) {
                     $tiempoRestante = "A las " . $horaSalidaReal->format('H:i') . " hrs";
                 } elseif ($minutosFaltantes <= 0) {
-                    $tiempoRestante = 'Saliendo...'; // Mostrará esto si la micro tiene retraso
+                    $tiempoRestante = 'Saliendo...';
                 } else {
                     $tiempoRestante = "En {$minutosFaltantes} min";
                 }
@@ -59,7 +55,6 @@ class InicioControlador extends Controller
                 }
             }
         } else {
-            // Verificación de micros actualmente circulando
             $microsEnRuta = Recorrido::where('estado', 'en_ruta')->get()->contains(function ($r) use ($hoy) {
                 return Carbon::parse($r->hora_salida)->setTimezone('America/Santiago')->toDateString() === $hoy;
             });

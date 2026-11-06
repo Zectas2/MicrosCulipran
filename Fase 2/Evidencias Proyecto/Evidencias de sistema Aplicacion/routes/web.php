@@ -121,4 +121,7 @@ Route::middleware(['rol:conductor'])->prefix('conductor')->group(function () {
     Route::get('/itinerario', function () {
         return view('conductor.itinerario');
     });
+
+    // Transmisión de telemetría de alta frecuencia
+    Route::post('/telemetria/{id}', [PanelControlador::class, 'transmitirUbicacion'])->name('conductor.telemetria');
 });

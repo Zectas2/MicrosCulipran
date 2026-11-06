@@ -2,9 +2,12 @@
 
 namespace Illuminate\Queue;
 
+use Carbon\CarbonInterval;
 use Closure;
+use DateTimeInterface;
 use Illuminate\Contracts\Queue\Factory as FactoryContract;
 use Illuminate\Contracts\Queue\Monitor as MonitorContract;
+use Illuminate\Support\InteractsWithTime;
 use Illuminate\Support\Queue\Concerns\ResolvesQueueRoutes;
 use InvalidArgumentException;
 use UnitEnum;
@@ -16,7 +19,7 @@ use function Illuminate\Support\enum_value;
  */
 class QueueManager implements FactoryContract, MonitorContract
 {
-    use ResolvesQueueRoutes;
+    use InteractsWithTime, ResolvesQueueRoutes;
 
     /**
      * The application instance.
@@ -127,6 +130,30 @@ class QueueManager implements FactoryContract, MonitorContract
     }
 
     /**
+     * Register a callback to be invoked when a job runs for longer than a given amount of time.
+     *
+     * @param  \DateTimeInterface|\Carbon\CarbonInterval|float|int  $threshold
+     * @param  callable  $handler
+     * @return void
+     */
+    public function whenJobRunsLongerThan($threshold, $handler)
+    {
+        $threshold = $threshold instanceof DateTimeInterface
+            ? $this->secondsUntil($threshold) * 1000
+            : $threshold;
+
+        $threshold = $threshold instanceof CarbonInterval
+            ? $threshold->totalMilliseconds
+            : $threshold;
+
+        $this->app['events']->listen(Events\JobAttempted::class, function ($event) use ($threshold, $handler) {
+            if (! is_null($event->duration) && $event->duration > $threshold) {
+                $handler($event->job, $event->duration);
+            }
+        });
+    }
+
+    /**
      * Set the queue route for the given class.
      *
      * @param  array|class-string  $class
@@ -232,12 +259,15 @@ class QueueManager implements FactoryContract, MonitorContract
     /**
      * Pause a queue by its connection and name.
      *
-     * @param  string  $connection
-     * @param  string  $queue
+     * @param  \UnitEnum|string  $connection
+     * @param  \UnitEnum|string  $queue
      * @return void
      */
     public function pause($connection, $queue)
     {
+        $connection = enum_value($connection);
+        $queue = enum_value($queue);
+
         $this->app['cache']
             ->store()
             ->forever("illuminate:queue:paused:{$connection}:{$queue}", true);
@@ -250,13 +280,16 @@ class QueueManager implements FactoryContract, MonitorContract
     /**
      * Pause a queue by its connection and name for a given amount of time.
      *
-     * @param  string  $connection
-     * @param  string  $queue
+     * @param  \UnitEnum|string  $connection
+     * @param  \UnitEnum|string  $queue
      * @param  \DateTimeInterface|\DateInterval|int  $ttl
      * @return void
      */
     public function pauseFor($connection, $queue, $ttl)
     {
+        $connection = enum_value($connection);
+        $queue = enum_value($queue);
+
         $this->app['cache']
             ->store()
             ->put("illuminate:queue:paused:{$connection}:{$queue}", true, $ttl);
@@ -285,12 +318,15 @@ class QueueManager implements FactoryContract, MonitorContract
     /**
      * Resume a paused queue by its connection and name.
      *
-     * @param  string  $connection
-     * @param  string  $queue
+     * @param  \UnitEnum|string  $connection
+     * @param  \UnitEnum|string  $queue
      * @return void
      */
     public function resume($connection, $queue)
     {
+        $connection = enum_value($connection);
+        $queue = enum_value($queue);
+
         $this->app['cache']
             ->store()
             ->forget("illuminate:queue:paused:{$connection}:{$queue}");
@@ -321,12 +357,15 @@ class QueueManager implements FactoryContract, MonitorContract
     /**
      * Determine if a queue is paused.
      *
-     * @param  string  $connection
-     * @param  string  $queue
+     * @param  \UnitEnum|string  $connection
+     * @param  \UnitEnum|string  $queue
      * @return bool
      */
     public function isPaused($connection, $queue)
     {
+        $connection = enum_value($connection);
+        $queue = enum_value($queue);
+
         $cache = $this->app['cache']->store();
 
         return (bool) ($cache->get('illuminate:queues:paused')
