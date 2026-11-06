@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # 1. El servidor web principal (Pasajeros y Conductores)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8080" # Dokploy enrutará microsculipran.tech hacia aquí
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      # Las demás variables de Supabase se configurarán directamente en el panel de Dokploy
+
+  # 2. El motor de WebSockets (Radar GPS)
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: php artisan reverb:start --host="0.0.0.0" --port="8080"
+    restart: unless-stopped
+    ports:
+      - "6001:8080" # Puerto independiente para la telemetría en vivo
+    depends_on:
+      - web
