@@ -15,8 +15,9 @@ COPY --chown=www-data:www-data . /var/www/html
 
 # Instalamos dependencias de PHP y Node.js, y compilamos los assets
 RUN composer install --no-interaction --optimize-autoloader --no-dev
+RUN rm -rf node_modules
 RUN npm install
-RUN npm run build
+RUN npx vite build
 
 # Limpiamos caché de configuración de Laravel
 RUN php artisan config:clear
