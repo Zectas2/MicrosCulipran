@@ -10,87 +10,73 @@ class PanelAdministracionControlador extends Controller
 {
     public function index()
     {
-        // 1. Configuramos la zona horaria exacta para todo el cálculo
         $tz = 'America/Santiago';
         $hoy = \Carbon\Carbon::now($tz);
-        $fechaActual = $hoy->format('Y-m-d'); // Extraemos solo el string de la fecha '2026-11-09'
+        $fechaActual = $hoy->format('Y-m-d');
 
-        // 2. KPI: Micros en ruta
-        $microsEnRuta = \Illuminate\Support\Facades\DB::table('recorridos')
-            ->where('estado', 'en_ruta')
-            // Usamos date() en SQL crudo para evitar discrepancias de casteo en Supabase
-            ->whereRaw("DATE(hora_salida) = ?", [$fechaActual])
+        // 1. KPIs utilizando los Modelos Eloquent para respetar UUIDs nativamente
+        $microsEnRuta = \App\Models\Recorrido::where('estado', 'en_ruta')
+            ->whereDate('hora_salida', $fechaActual)
             ->count();
 
-        // 3. KPI: Recorridos Hoy
-        $recorridosHoy = \Illuminate\Support\Facades\DB::table('recorridos')
-            ->whereRaw("DATE(hora_salida) = ?", [$fechaActual])
+        $recorridosHoy = \App\Models\Recorrido::whereDate('hora_salida', $fechaActual)
             ->count();
 
-        // 4. KPI: Alertas
-        $alertas = \Illuminate\Support\Facades\DB::table('vehiculos')
-            ->where('estado', 'en_mantencion')
+        // Asumiendo que su modelo se llama Vehiculo
+        $alertas = \App\Models\Vehiculo::where('estado', 'en_mantencion')
             ->count();
 
-        // 5. Módulo de Flota Activa: Mostrar en ruta y próximos a salir
-        $flotaActiva = \Illuminate\Support\Facades\DB::table('recorridos')
-            ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
-            ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
-            ->whereIn('recorridos.estado', ['asignado', 'pendiente', 'en_ruta'])
-            ->whereRaw("DATE(recorridos.hora_salida) = ?", [$fechaActual])
-            ->select(
-                'vehiculos.patente',
-                'usuarios.nombre as conductor',
-                'recorridos.hora_salida',
-                'recorridos.estado'
-            )
-            ->orderBy('recorridos.hora_salida', 'asc')
+        // 2. Módulo de Flota Activa (Blindado con Eloquent y Relaciones)
+        $flotaActiva = \App\Models\Recorrido::with(['vehiculo', 'conductor'])
+            ->whereNotIn('estado', ['finalizado', 'cancelado'])
+            ->whereDate('hora_salida', $fechaActual)
+            ->orderBy('hora_salida', 'asc')
             ->get()
-            ->map(function ($recorrido) use ($tz) {
-                // Parseamos la hora guardada asumiendo que está en zona horaria local
-                $horaSalida = \Carbon\Carbon::parse($recorrido->hora_salida, $tz);
-                $ahora = \Carbon\Carbon::now($tz);
+            ->map(function ($recorrido) use ($tz, $hoy) {
+                // Gracias al $casts de su modelo, hora_salida ya es un objeto Carbon
+                $horaSalida = $recorrido->hora_salida->copy()->setTimezone($tz);
 
-                $recorrido->horaSalidaFormateada = $horaSalida->format('H:i');
-                $recorrido->bgColor = 'bg-white';
-                $recorrido->bordeClase = 'border-gray-200';
+                // Construimos un objeto limpio idéntico al que espera su vista Blade
+                $item = new \stdClass();
+                $item->patente = $recorrido->vehiculo ? $recorrido->vehiculo->patente : 'S/P';
+                $item->conductor = $recorrido->conductor ? $recorrido->conductor->nombre : 'No asignado';
+                $item->horaSalidaFormateada = $horaSalida->format('H:i');
+                $item->bgColor = 'bg-white';
+                $item->bordeClase = 'border-gray-200';
 
                 // Lógica Condicional: Diferenciamos el diseño y cálculo según el estado
                 if ($recorrido->estado === 'en_ruta') {
-                    $recorrido->iconBg = 'bg-primario/10';
-                    $recorrido->iconColor = 'text-primario';
-                    $recorrido->textoEstado = 'En Ruta';
-                    $recorrido->badgeClass = 'bg-green-100 text-green-800';
+                    $item->iconBg = 'bg-primario/10';
+                    $item->iconColor = 'text-primario';
+                    $item->textoEstado = 'En Ruta';
+                    $item->badgeClass = 'bg-green-100 text-green-800';
 
-                    $recorrido->etiquetaTiempo = 'Tiempo en ruta';
-                    // Cálculo absoluto de minutos en ruta
-                    $minutos = round($ahora->diffInMinutes($horaSalida));
-                    $recorrido->valorTiempo = $minutos . ' min';
-                    $recorrido->textoTiempoClase = 'text-gray-700';
+                    $item->etiquetaTiempo = 'Tiempo en ruta';
+                    $minutos = round($hoy->diffInMinutes($horaSalida));
+                    $item->valorTiempo = $minutos . ' min';
+                    $item->textoTiempoClase = 'text-gray-700';
                 } else {
                     // Estado: Asignado / Por Salir
-                    $recorrido->iconBg = 'bg-gray-100';
-                    $recorrido->iconColor = 'text-gray-500';
-                    $recorrido->textoEstado = 'Por Salir';
-                    $recorrido->badgeClass = 'bg-gray-200 text-gray-700';
+                    $item->iconBg = 'bg-gray-100';
+                    $item->iconColor = 'text-gray-500';
+                    $item->textoEstado = 'Por Salir';
+                    $item->badgeClass = 'bg-gray-200 text-gray-700';
 
-                    $recorrido->etiquetaTiempo = 'Sale en';
+                    $item->etiquetaTiempo = 'Sale en';
 
-                    if ($ahora->greaterThan($horaSalida)) {
-                        // La hora actual es mayor a la hora de salida programada = Atrasado
-                        $recorrido->valorTiempo = 'Atrasado';
-                        $recorrido->textoTiempoClase = 'text-red-500 font-extrabold';
-                        $recorrido->badgeClass = 'bg-red-100 text-red-800';
-                        $recorrido->textoEstado = 'Retrasado';
+                    if ($hoy->greaterThan($horaSalida)) {
+                        $item->valorTiempo = 'Atrasado';
+                        $item->textoTiempoClase = 'text-red-500 font-extrabold';
+                        $item->badgeClass = 'bg-red-100 text-red-800';
+                        $item->textoEstado = 'Retrasado';
                     } else {
-                        // Cálculo de tiempo restante para salir
-                        $minutosRestantes = round($horaSalida->diffInMinutes($ahora));
-                        $recorrido->valorTiempo = $minutosRestantes . ' min';
-                        $recorrido->textoTiempoClase = 'text-gray-500';
+                        $minutosRestantes = round($horaSalida->diffInMinutes($hoy));
+                        $item->valorTiempo = $minutosRestantes . ' min';
+                        $item->textoTiempoClase = 'text-gray-500';
                     }
                 }
 
-                return $recorrido;
+                return $item;
             });
 
         return view('admin.index', compact(
