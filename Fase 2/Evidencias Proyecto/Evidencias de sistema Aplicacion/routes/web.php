@@ -62,11 +62,10 @@ Route::post('/logout', [AutenticacionControlador::class, 'cerrarSesion'])->name(
 
 Route::middleware(['rol:administrador'])->prefix('admin')->group(function () {
 
-    // Panel General y KPIs
-    Route::get('/', [PanelAdministracionControlador::class, 'index']);
-    Route::get('/mapa', [PanelAdministracionControlador::class, 'mapa']);
-    Route::get('/bi', [PanelAdministracionControlador::class, 'bi']);
-    Route::get('/mapa', [\App\Http\Controllers\Admin\MapaAdminControlador::class, 'index']);
+    // Panel General, Mapa en Vivo y KPIs BI
+    Route::get('/', [PanelAdministracionControlador::class, 'index'])->name('admin.index');
+    Route::get('/mapa', [\App\Http\Controllers\Admin\MapaAdminControlador::class, 'index'])->name('admin.mapa');
+    Route::get('/bi', [PanelAdministracionControlador::class, 'bi'])->name('admin.bi');
 
     // Gestión de Choferes
     Route::get('/choferes', [ChoferControlador::class, 'index'])->name('admin.choferes.index');
@@ -96,8 +95,6 @@ Route::middleware(['rol:administrador'])->prefix('admin')->group(function () {
     // Comunicados y Notificaciones
     Route::get('/notificaciones', [AdminNotificacionControlador::class, 'create'])->name('admin.notificaciones.create');
     Route::post('/notificaciones', [AdminNotificacionControlador::class, 'store'])->name('admin.notificaciones.store');
-    
-    Route::get('/bi', [PanelAdministracionControlador::class, 'bi']);
 });
 
 

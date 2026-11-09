@@ -8,6 +8,37 @@ use Carbon\Carbon;
 
 class PanelAdministracionControlador extends Controller
 {
+    public function index()
+    {
+        $hoy = Carbon::today('America/Santiago');
+
+        // Métricas rápidas por si la vista principal (admin.index) las requiere
+        $microsEnRuta = DB::table('recorridos')
+            ->where('estado', 'en_ruta')
+            ->count();
+
+        $totalVehiculos = DB::table('vehiculos')->count();
+        $vehiculosOperativos = DB::table('vehiculos')
+            ->where('estado', 'operativo')
+            ->count();
+
+        $choferesActivos = DB::table('usuarios')
+            ->where('rol', 'conductor')
+            ->where('estado', 'activo')
+            ->count();
+
+        $turnosHoy = DB::table('recorridos')
+            ->whereDate('hora_salida', $hoy)
+            ->count();
+
+        return view('admin.index', compact(
+            'microsEnRuta',
+            'totalVehiculos',
+            'vehiculosOperativos',
+            'choferesActivos',
+            'turnosHoy'
+        ));
+    }
 
     public function bi()
     {
@@ -35,7 +66,6 @@ class PanelAdministracionControlador extends Controller
         $datosProductividad = $productividad->pluck('total_vueltas');
 
         // 3. Eficiencia de Ruta - Tiempo Promedio (Gráfico Horizontal)
-        // Utilizamos EXTRACT(EPOCH) nativo de PostgreSQL para obtener los minutos exactos
         $eficiencia = DB::table('recorridos')
             ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
             ->where('recorridos.estado', 'finalizado')
