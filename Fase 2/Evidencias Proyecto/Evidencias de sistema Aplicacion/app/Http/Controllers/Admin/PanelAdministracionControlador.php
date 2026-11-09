@@ -28,36 +28,63 @@ class PanelAdministracionControlador extends Controller
             ->where('estado', 'en_mantencion')
             ->count();
 
-        // 4. Módulo de Flota Activa: Construimos el objeto exacto que su vista espera renderizar
+        // 4. Módulo de Flota Activa: Mostrar tanto en ruta como próximos a salir
         $flotaActiva = \Illuminate\Support\Facades\DB::table('recorridos')
             ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
             ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
-            ->where('recorridos.estado', 'en_ruta')
+            // Ampliamos el filtro para incluir los turnos asignados que aún no parten
+            ->whereIn('recorridos.estado', ['asignado', 'pendiente', 'en_ruta'])
             ->whereDate('recorridos.hora_salida', $hoy)
             ->select(
                 'vehiculos.patente',
                 'usuarios.nombre as conductor',
-                'recorridos.hora_salida'
+                'recorridos.hora_salida',
+                'recorridos.estado'
             )
+            ->orderBy('recorridos.hora_salida', 'asc')
             ->get()
             ->map(function ($recorrido) {
-                // Inyectamos las clases de diseño y datos formateados que el Blade necesita
-                $recorrido->bgColor = 'bg-white';
-                $recorrido->iconBg = 'bg-primario/10';
-                $recorrido->iconColor = 'text-primario';
-                $recorrido->textoEstado = 'En Ruta';
-                $recorrido->badgeClass = 'bg-green-100 text-green-800'; // Semáforo en verde
-
-                // Cálculos de tiempo en tránsito
                 $horaSalida = \Carbon\Carbon::parse($recorrido->hora_salida)->timezone('America/Santiago');
+                $ahora = \Carbon\Carbon::now('America/Santiago');
+
                 $recorrido->horaSalidaFormateada = $horaSalida->format('H:i');
-
-                $recorrido->etiquetaTiempo = 'Tiempo en ruta';
-                $minutos = $horaSalida->diffInMinutes(\Carbon\Carbon::now('America/Santiago'));
-                $recorrido->valorTiempo = $minutos . ' min';
-
-                $recorrido->textoTiempoClase = 'text-gray-700';
+                $recorrido->bgColor = 'bg-white';
                 $recorrido->bordeClase = 'border-gray-200';
+
+                // Lógica Condicional: Diferenciamos el diseño y cálculo según el estado
+                if ($recorrido->estado === 'en_ruta') {
+                    $recorrido->iconBg = 'bg-primario/10';
+                    $recorrido->iconColor = 'text-primario';
+                    $recorrido->textoEstado = 'En Ruta';
+                    $recorrido->badgeClass = 'bg-green-100 text-green-800'; // Semáforo en verde
+
+                    $recorrido->etiquetaTiempo = 'Tiempo en ruta';
+                    // Aplicamos round() para truncar los decimales
+                    $minutos = round($horaSalida->floatDiffInMinutes($ahora));
+                    $recorrido->valorTiempo = $minutos . ' min';
+                    $recorrido->textoTiempoClase = 'text-gray-700';
+                } else {
+                    // Estado: Asignado / Por Salir
+                    $recorrido->iconBg = 'bg-gray-100';
+                    $recorrido->iconColor = 'text-gray-500';
+                    $recorrido->textoEstado = 'Por Salir';
+                    $recorrido->badgeClass = 'bg-gray-200 text-gray-700'; // Semáforo en gris
+
+                    $recorrido->etiquetaTiempo = 'Sale en';
+
+                    if ($horaSalida->isPast()) {
+                        // Si la hora programada ya pasó y el chofer no ha iniciado
+                        $recorrido->valorTiempo = 'Atrasado';
+                        $recorrido->textoTiempoClase = 'text-red-500 font-extrabold';
+                        $recorrido->badgeClass = 'bg-red-100 text-red-800';
+                        $recorrido->textoEstado = 'Retrasado';
+                    } else {
+                        // Cálculo de tiempo restante para salir, redondeado
+                        $minutosRestantes = round($ahora->floatDiffInMinutes($horaSalida));
+                        $recorrido->valorTiempo = $minutosRestantes . ' min';
+                        $recorrido->textoTiempoClase = 'text-gray-500';
+                    }
+                }
 
                 return $recorrido;
             });
