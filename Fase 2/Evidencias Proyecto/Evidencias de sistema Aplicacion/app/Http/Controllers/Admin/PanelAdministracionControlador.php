@@ -10,31 +10,34 @@ class PanelAdministracionControlador extends Controller
 {
     public function index()
     {
-        $hoy = \Carbon\Carbon::today('America/Santiago');
+        // 1. Configuramos la zona horaria exacta para todo el cálculo
+        $tz = 'America/Santiago';
+        $hoy = \Carbon\Carbon::now($tz);
+        $fechaActual = $hoy->format('Y-m-d'); // Extraemos solo el string de la fecha '2026-11-09'
 
-        // 1. KPI: Micros en ruta (con filtro de fecha para evitar registros colgados)
+        // 2. KPI: Micros en ruta
         $microsEnRuta = \Illuminate\Support\Facades\DB::table('recorridos')
             ->where('estado', 'en_ruta')
-            ->whereDate('hora_salida', $hoy)
+            // Usamos date() en SQL crudo para evitar discrepancias de casteo en Supabase
+            ->whereRaw("DATE(hora_salida) = ?", [$fechaActual])
             ->count();
 
-        // 2. KPI: Recorridos Hoy (Renombrado de $turnosHoy a $recorridosHoy para coincidir con la vista)
+        // 3. KPI: Recorridos Hoy
         $recorridosHoy = \Illuminate\Support\Facades\DB::table('recorridos')
-            ->whereDate('hora_salida', $hoy)
+            ->whereRaw("DATE(hora_salida) = ?", [$fechaActual])
             ->count();
 
-        // 3. KPI: Alertas (Consultamos si hay vehículos en pana)
+        // 4. KPI: Alertas
         $alertas = \Illuminate\Support\Facades\DB::table('vehiculos')
             ->where('estado', 'en_mantencion')
             ->count();
 
-        // 4. Módulo de Flota Activa: Mostrar tanto en ruta como próximos a salir
+        // 5. Módulo de Flota Activa: Mostrar en ruta y próximos a salir
         $flotaActiva = \Illuminate\Support\Facades\DB::table('recorridos')
             ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
             ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
-            // Ampliamos el filtro para incluir los turnos asignados que aún no parten
             ->whereIn('recorridos.estado', ['asignado', 'pendiente', 'en_ruta'])
-            ->whereDate('recorridos.hora_salida', $hoy)
+            ->whereRaw("DATE(recorridos.hora_salida) = ?", [$fechaActual])
             ->select(
                 'vehiculos.patente',
                 'usuarios.nombre as conductor',
@@ -43,9 +46,10 @@ class PanelAdministracionControlador extends Controller
             )
             ->orderBy('recorridos.hora_salida', 'asc')
             ->get()
-            ->map(function ($recorrido) {
-                $horaSalida = \Carbon\Carbon::parse($recorrido->hora_salida)->timezone('America/Santiago');
-                $ahora = \Carbon\Carbon::now('America/Santiago');
+            ->map(function ($recorrido) use ($tz) {
+                // Parseamos la hora guardada asumiendo que está en zona horaria local
+                $horaSalida = \Carbon\Carbon::parse($recorrido->hora_salida, $tz);
+                $ahora = \Carbon\Carbon::now($tz);
 
                 $recorrido->horaSalidaFormateada = $horaSalida->format('H:i');
                 $recorrido->bgColor = 'bg-white';
@@ -56,11 +60,11 @@ class PanelAdministracionControlador extends Controller
                     $recorrido->iconBg = 'bg-primario/10';
                     $recorrido->iconColor = 'text-primario';
                     $recorrido->textoEstado = 'En Ruta';
-                    $recorrido->badgeClass = 'bg-green-100 text-green-800'; // Semáforo en verde
+                    $recorrido->badgeClass = 'bg-green-100 text-green-800';
 
                     $recorrido->etiquetaTiempo = 'Tiempo en ruta';
-                    // Aplicamos round() para truncar los decimales
-                    $minutos = round($horaSalida->floatDiffInMinutes($ahora));
+                    // Cálculo absoluto de minutos en ruta
+                    $minutos = round($ahora->diffInMinutes($horaSalida));
                     $recorrido->valorTiempo = $minutos . ' min';
                     $recorrido->textoTiempoClase = 'text-gray-700';
                 } else {
@@ -68,19 +72,19 @@ class PanelAdministracionControlador extends Controller
                     $recorrido->iconBg = 'bg-gray-100';
                     $recorrido->iconColor = 'text-gray-500';
                     $recorrido->textoEstado = 'Por Salir';
-                    $recorrido->badgeClass = 'bg-gray-200 text-gray-700'; // Semáforo en gris
+                    $recorrido->badgeClass = 'bg-gray-200 text-gray-700';
 
                     $recorrido->etiquetaTiempo = 'Sale en';
 
-                    if ($horaSalida->isPast()) {
-                        // Si la hora programada ya pasó y el chofer no ha iniciado
+                    if ($ahora->greaterThan($horaSalida)) {
+                        // La hora actual es mayor a la hora de salida programada = Atrasado
                         $recorrido->valorTiempo = 'Atrasado';
                         $recorrido->textoTiempoClase = 'text-red-500 font-extrabold';
                         $recorrido->badgeClass = 'bg-red-100 text-red-800';
                         $recorrido->textoEstado = 'Retrasado';
                     } else {
-                        // Cálculo de tiempo restante para salir, redondeado
-                        $minutosRestantes = round($ahora->floatDiffInMinutes($horaSalida));
+                        // Cálculo de tiempo restante para salir
+                        $minutosRestantes = round($horaSalida->diffInMinutes($ahora));
                         $recorrido->valorTiempo = $minutosRestantes . ' min';
                         $recorrido->textoTiempoClase = 'text-gray-500';
                     }
