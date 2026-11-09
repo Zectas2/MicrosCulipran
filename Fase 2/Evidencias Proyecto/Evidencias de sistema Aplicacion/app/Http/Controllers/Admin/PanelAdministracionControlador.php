@@ -70,7 +70,8 @@ class PanelAdministracionControlador extends Controller
                         $item->badgeClass = 'bg-red-100 text-red-800';
                         $item->textoEstado = 'Retrasado';
                     } else {
-                        $minutosRestantes = round($horaSalida->diffInMinutes($hoy));
+                        // CORRECCIÓN: Aplicamos abs() para asegurar un valor absoluto siempre positivo
+                        $minutosRestantes = abs(round($hoy->diffInMinutes($horaSalida)));
                         $item->valorTiempo = $minutosRestantes . ' min';
                         $item->textoTiempoClase = 'text-gray-500';
                     }
