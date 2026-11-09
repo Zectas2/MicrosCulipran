@@ -62,7 +62,7 @@ Route::post('/logout', [AutenticacionControlador::class, 'cerrarSesion'])->name(
 
 Route::middleware(['rol:administrador'])->prefix('admin')->group(function () {
 
-    // Panel General, Mapa en Vivo y KPIs BI
+    // Panel General, Mapa de Administración y BI
     Route::get('/', [PanelAdministracionControlador::class, 'index'])->name('admin.index');
     Route::get('/mapa', [\App\Http\Controllers\Admin\MapaAdminControlador::class, 'index'])->name('admin.mapa');
     Route::get('/bi', [PanelAdministracionControlador::class, 'bi'])->name('admin.bi');
