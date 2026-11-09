@@ -8,59 +8,62 @@ use Carbon\Carbon;
 
 class PanelAdministracionControlador extends Controller
 {
-    public function index()
+
+    public function bi()
     {
         $hoy = Carbon::today('America/Santiago');
 
-        // Cálculo de KPIs
-        $microsEnRuta = DB::table('recorridos')->where('estado', 'en_ruta')->count();
-        $recorridosHoy = DB::table('recorridos')->whereDate('hora_salida', $hoy)->count();
-        $alertas = DB::table('vehiculos')->whereIn('estado', ['en_mantencion', 'fuera_de_servicio'])->count();
+        // 1. KPI: Vueltas Completadas
+        $vueltasCompletadas = DB::table('recorridos')
+            ->where('estado', 'finalizado')
+            ->whereDate('updated_at', $hoy)
+            ->count();
 
-        // Monitoreo de Flota Activa
-        $flotaActiva = DB::table('recorridos')
-            ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
+        // KPI: Puntualidad (Simulado por ahora, requiere guardar la hora teórica en la BD)
+        $puntualidad = 92;
+
+        // 2. Productividad por Chofer (Gráfico de Barras Vertical)
+        $productividad = DB::table('recorridos')
             ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
-            ->whereDate('recorridos.hora_salida', $hoy)
-            ->where('recorridos.estado', '!=', 'finalizado') // <-- Filtro de exclusión aplicado aquí
+            ->where('recorridos.estado', 'finalizado')
+            ->whereDate('recorridos.updated_at', $hoy)
+            ->select('usuarios.nombre', DB::raw('COUNT(recorridos.id) as total_vueltas'))
+            ->groupBy('usuarios.id', 'usuarios.nombre')
+            ->get();
+
+        $labelsProductividad = $productividad->pluck('nombre');
+        $datosProductividad = $productividad->pluck('total_vueltas');
+
+        // 3. Eficiencia de Ruta - Tiempo Promedio (Gráfico Horizontal)
+        // Utilizamos EXTRACT(EPOCH) nativo de PostgreSQL para obtener los minutos exactos
+        $eficiencia = DB::table('recorridos')
+            ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
+            ->where('recorridos.estado', 'finalizado')
+            ->whereDate('recorridos.updated_at', $hoy)
             ->select(
-                'vehiculos.patente',
-                'vehiculos.estado as estado_vehiculo',
-                'usuarios.nombre as conductor',
-                'recorridos.hora_salida',
-                'recorridos.estado as estado_recorrido'
+                'usuarios.nombre',
+                DB::raw('ROUND(AVG(EXTRACT(EPOCH FROM (recorridos.updated_at::timestamp - recorridos.hora_salida::timestamp)) / 60)) as minutos_promedio')
             )
-            ->orderBy('recorridos.hora_salida', 'desc')
-            ->get()
-            ->map(function ($recorrido) {
-                $isError = in_array($recorrido->estado_vehiculo, ['en_mantencion', 'fuera_de_servicio']);
+            ->groupBy('usuarios.id', 'usuarios.nombre')
+            ->get();
 
-                $recorrido->bgColor = $isError ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-fondo';
-                $recorrido->iconBg = $isError ? 'bg-peligro/10 border-peligro/20' : 'bg-acento/10 border-transparent';
-                $recorrido->iconColor = $isError ? 'text-peligro' : 'text-acento';
-                $recorrido->badgeClass = $isError ? 'bg-peligro text-secundario animate-pulse' : 'bg-acento/10 border border-acento/20 text-acento';
-                $recorrido->bordeClase = $isError ? 'border-peligro/30' : 'border-gray-200';
-                $recorrido->textoTiempoClase = $isError ? 'text-peligro' : 'text-primario';
+        $labelsEficiencia = $eficiencia->pluck('nombre');
+        $datosEficiencia = $eficiencia->pluck('minutos_promedio');
 
-                $recorrido->textoEstado = ucwords(str_replace('_', ' ', $recorrido->estado_recorrido));
+        // 4. Panel de Mantenimiento (Máquinas fuera de servicio)
+        $maquinasMantenimiento = DB::table('vehiculos')
+            ->whereIn('estado', ['en_mantencion', 'fuera_de_servicio'])
+            ->select('patente', 'estado', 'updated_at')
+            ->get();
 
-                $horaParseada = Carbon::parse($recorrido->hora_salida)->timezone('America/Santiago');
-                $recorrido->horaSalidaFormateada = $horaParseada->format('H:i');
-
-                // Lógica condicional para el tiempo en ruta
-                if (in_array($recorrido->estado_recorrido, ['asignado', 'programado'])) {
-                    $recorrido->etiquetaTiempo = 'Estado Operativo';
-                    $recorrido->valorTiempo = 'En Espera';
-                    $recorrido->textoTiempoClase = 'text-gray-500';
-                } else {
-                    $recorrido->etiquetaTiempo = 'Tiempo en Ruta';
-                    $recorrido->valorTiempo = (int) round($horaParseada->diffInMinutes(now('America/Santiago'))) . ' min';
-                    $recorrido->textoTiempoClase = $isError ? 'text-peligro' : 'text-primario';
-                }
-
-                return $recorrido;
-            });
-
-        return view('admin.index', compact('microsEnRuta', 'recorridosHoy', 'alertas', 'flotaActiva'));
+        return view('admin.bi', compact(
+            'vueltasCompletadas',
+            'puntualidad',
+            'labelsProductividad',
+            'datosProductividad',
+            'labelsEficiencia',
+            'datosEficiencia',
+            'maquinasMantenimiento'
+        ));
     }
 }

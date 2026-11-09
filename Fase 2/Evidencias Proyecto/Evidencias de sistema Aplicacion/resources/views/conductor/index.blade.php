@@ -36,8 +36,14 @@ $vueltasTotales = $turnosHoy->count();
         </div>
 
         <div class="flex justify-between items-center mb-3 pr-10">
-            <span class="text-xs font-bold uppercase tracking-wider text-primario bg-primario/10 px-3 py-1 rounded-full">
-                {{ $turnoActual->estado === 'en_ruta' ? 'Ruta Activa' : 'Turno Asignado' }}
+            <span class="text-xs font-bold uppercase tracking-wider text-primario bg-primario/10 px-3 py-1 rounded-full flex items-center">
+                @if($turnoActual->estado === 'en_ruta')
+                <!-- Semáforo de conexión GPS inyectado aquí -->
+                <span id="indicador-red" class="w-2 h-2 rounded-full bg-gray-400 mr-2 animate-pulse" title="Esperando GPS..."></span>
+                Ruta Activa
+                @else
+                Turno Asignado
+                @endif
             </span>
             <span class="text-xs font-bold text-acento">
                 {{ $turnoActual->estado === 'en_ruta' ? 'En Tránsito' : 'Pendiente' }}
@@ -53,7 +59,7 @@ $vueltasTotales = $turnosHoy->count();
             </div>
             <div class="text-right">
                 <p class="text-[10px] uppercase font-bold text-texto/50">Hora Programada</p>
-                <p class="font-bold">{{ $turnoActual->horaFormateada }} hrs</p>
+                <p class="font-bold">{{ \Carbon\Carbon::parse($turnoActual->hora_salida)->format('H:i') }} hrs</p>
             </div>
         </div>
 
@@ -91,15 +97,17 @@ $vueltasTotales = $turnosHoy->count();
                 <span>INICIAR RUTA</span>
             </button>
         </form>
-        @else
-        <!-- Botón deshabilitado si ya inició ruta o no tiene turnos -->
+        @elseif(!$turnoActual)
+        <!-- Botón deshabilitado si no tiene turnos -->
         <button disabled class="w-full bg-gray-300 text-gray-500 text-xl font-black py-6 rounded-3xl shadow-sm flex items-center justify-center space-x-3 cursor-not-allowed">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <span>{{ $turnoActual && $turnoActual->estado === 'en_ruta' ? 'RUTA EN CURSO' : 'SIN RUTA PENDIENTE' }}</span>
+            <span>SIN RUTA PENDIENTE</span>
         </button>
+        @else
+        <!-- No mostramos el botón iniciar si ya está en ruta -->
         @endif
 
         <!-- Botón 2: Finalizar Ruta Actual (Funcional) -->
@@ -143,64 +151,106 @@ $vueltasTotales = $turnosHoy->count();
     </div>
 
     <!-- Nota de Asistencia Operativa -->
-    <div class="text-center px-4">
-        <p class="text-xs text-texto/50 leading-relaxed">
-            Sistema operativo en segundo plano. Su ubicación se transmite de forma automática.
+    <div class="text-center px-4 mt-2">
+        <p class="text-[10px] text-texto/50 leading-relaxed font-bold uppercase" id="estado-conexion-texto">
+            Buscando satélites GPS...
         </p>
     </div>
 
 </div>
 
 <!-- Motor de Telemetría GPS en Tiempo Real -->
-    @if($turnoActual && $turnoActual->estado === 'en_ruta')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if ("geolocation" in navigator) {
-                // Configuramos el GPS para máxima precisión (Consume más batería pero es exacto)
-                const opcionesGps = {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 5000
-                };
+@if($turnoActual && $turnoActual->estado === 'en_ruta')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if ("geolocation" in navigator) {
+            const indicadorRed = document.getElementById('indicador-red');
+            const estadoTexto = document.getElementById('estado-conexion-texto');
 
-                // watchPosition mantiene el GPS encendido y escuchando cambios de ubicación
-                const watchId = navigator.geolocation.watchPosition(
-                    function(posicion) {
+            // Función visual para actualizar el estado del semáforo
+            const actualizarSemaforo = (estado) => {
+                if (!indicadorRed || !estadoTexto) return;
+
+                indicadorRed.classList.remove('bg-gray-400', 'bg-green-500', 'bg-red-500', 'bg-yellow-500');
+
+                switch (estado) {
+                    case 'OK':
+                        indicadorRed.classList.add('bg-green-500');
+                        estadoTexto.innerText = "Conexión estable. Transmitiendo GPS.";
+                        break;
+                    case 'OFFLINE':
+                        indicadorRed.classList.add('bg-red-500');
+                        estadoTexto.innerText = "Sin internet. Reconectando en segundo plano...";
+                        break;
+                    case 'LENTO':
+                        indicadorRed.classList.add('bg-yellow-500');
+                        estadoTexto.innerText = "Conexión inestable. El mapa podría verse desfasado.";
+                        break;
+                }
+            };
+
+            const opcionesGps = {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 5000 // Si el GPS tarda más de 5s en leer, intenta de nuevo
+            };
+
+            const watchId = navigator.geolocation.watchPosition(
+                async function(posicion) {
                         const latitud = posicion.coords.latitude;
                         const longitud = posicion.coords.longitude;
-                        // Algunos dispositivos móviles entregan la velocidad en metros por segundo
-                        const velocidad = posicion.coords.speed ? (posicion.coords.speed * 3.6).toFixed(2) : 0; 
+                        const velocidad = posicion.coords.speed ? (posicion.coords.speed * 3.6).toFixed(2) : 0;
 
-                        // Transmitimos de forma silenciosa al servidor
-                        fetch("{{ route('conductor.telemetria', $turnoActual->id) }}", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                                "Accept": "application/json"
-                            },
-                            body: JSON.stringify({
-                                lat: latitud,
-                                lng: longitud,
-                                velocidad: velocidad
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => console.log('Transmisión exitosa:', data))
-                        .catch(error => console.error('Error de transmisión:', error));
+                        // 1. Control de Timeout para conexiones 3G/E lentas
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 segundos máx de espera por pulso
+
+                        try {
+                            const response = await fetch("{{ route('conductor.telemetria', $turnoActual->id) }}", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                                    "Accept": "application/json"
+                                },
+                                body: JSON.stringify({
+                                    lat: latitud,
+                                    lng: longitud,
+                                    velocidad: velocidad
+                                }),
+                                signal: controller.signal // Inyectamos el control de aborto
+                            });
+
+                            clearTimeout(timeoutId); // Limpiamos el contador si respondió a tiempo
+
+                            if (response.ok) {
+                                actualizarSemaforo('OK');
+                            } else {
+                                actualizarSemaforo('LENTO'); // El server respondió, pero con error (ej. 500)
+                            }
+
+                        } catch (error) {
+                            // 2. Captura de fallos de red
+                            if (error.name === 'AbortError') {
+                                console.warn('Transmisión abortada: La red está muy lenta.');
+                                actualizarSemaforo('LENTO');
+                            } else {
+                                console.warn('Fallo de red: No hay internet en este sector.');
+                                actualizarSemaforo('OFFLINE');
+                            }
+                        }
                     },
                     function(error) {
                         console.warn('Señal GPS perdida o denegada:', error.message);
+                        if (estadoTexto) estadoTexto.innerText = "Error GPS: Asegúrese de estar al aire libre.";
+                        if (indicadorRed) indicadorRed.classList.replace('bg-green-500', 'bg-red-500');
                     },
                     opcionesGps
-                );
-
-                // Nota de seguridad: Al cerrar la pestaña o finalizar la ruta, 
-                // el navegador automáticamente destruye este proceso (clearWatch).
-            } else {
-                alert("El navegador de su dispositivo no soporta la lectura satelital GPS.");
-            }
-        });
-    </script>
-    @endif
+            );
+        } else {
+            alert("El navegador de su dispositivo no soporta la lectura satelital GPS.");
+        }
+    });
+</script>
+@endif
 @endsection

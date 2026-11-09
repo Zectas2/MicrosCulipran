@@ -96,10 +96,8 @@ Route::middleware(['rol:administrador'])->prefix('admin')->group(function () {
     // Comunicados y Notificaciones
     Route::get('/notificaciones', [AdminNotificacionControlador::class, 'create'])->name('admin.notificaciones.create');
     Route::post('/notificaciones', [AdminNotificacionControlador::class, 'store'])->name('admin.notificaciones.store');
-
-    Route::get('/bi', function () {
-    return view('admin.bi');
-});
+    
+    Route::get('/bi', [PanelAdministracionControlador::class, 'bi']);
 });
 
 

@@ -21,20 +21,20 @@
         <div class="bg-secundario p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
             <span class="text-texto/50 text-[10px] font-bold uppercase tracking-wider mb-1">Puntualidad de Salidas</span>
             <div class="flex items-baseline space-x-1">
-                <span class="text-3xl font-black text-acento">92%</span>
+                <span class="text-3xl font-black text-acento">{{ $puntualidad }}%</span>
             </div>
             <span class="text-texto/60 text-xs font-bold mt-1">Cumplimiento de horario</span>
         </div>
         <div class="bg-secundario p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
             <span class="text-texto/50 text-[10px] font-bold uppercase tracking-wider mb-1">Vueltas Completadas</span>
             <div class="flex items-baseline space-x-1">
-                <span class="text-3xl font-black text-primario">28</span>
+                <span class="text-3xl font-black text-primario">{{ $vueltasCompletadas }}</span>
             </div>
             <span class="text-texto/60 text-xs font-bold mt-1">Total flota en el día</span>
         </div>
     </div>
 
-    <!-- Gráfico 1: Productividad Diaria por Chofer (Vueltas Completadas) -->
+    <!-- Gráfico 1: Productividad Diaria por Chofer -->
     <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
             <div>
@@ -42,12 +42,22 @@
                 <p class="text-[10px] text-texto/50 uppercase tracking-wider font-bold mt-1">Total de recorridos finalizados hoy</p>
             </div>
         </div>
-        <div class="relative h-48 w-full">
+
+        <div class="relative h-48 w-full flex items-center justify-center @if(count($labelsProductividad) === 0) bg-fondo rounded-xl border border-dashed border-gray-200 @endif">
+            @if(count($labelsProductividad) > 0)
             <canvas id="productividadChart"></canvas>
+            @else
+            <div class="text-center text-texto/40">
+                <svg class="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <p class="text-xs font-bold uppercase tracking-wider">Sin recorridos finalizados</p>
+            </div>
+            @endif
         </div>
     </div>
 
-    <!-- Gráfico 2: Eficiencia de Ruta (Tiempo Total Promedio) -->
+    <!-- Gráfico 2: Eficiencia de Ruta -->
     <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
             <div>
@@ -55,8 +65,18 @@
                 <p class="text-[10px] text-texto/50 uppercase tracking-wider font-bold mt-1">Cálculo desde "Iniciar" hasta "Finalizar"</p>
             </div>
         </div>
-        <div class="relative h-48 w-full">
+
+        <div class="relative h-48 w-full flex items-center justify-center @if(count($labelsEficiencia) === 0) bg-fondo rounded-xl border border-dashed border-gray-200 @endif">
+            @if(count($labelsEficiencia) > 0)
             <canvas id="eficienciaChart"></canvas>
+            @else
+            <div class="text-center text-texto/40">
+                <svg class="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-xs font-bold uppercase tracking-wider">Esperando métricas de tiempo</p>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -68,24 +88,7 @@
         </div>
 
         <div class="space-y-3">
-            <div class="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-fondo">
-                <div class="flex items-center">
-                    <div class="bg-acento/10 p-2 rounded-lg mr-3">
-                        <svg class="w-5 h-5 text-acento" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="font-black text-texto text-sm">AB-1234</p>
-                        <p class="text-[10px] text-texto/60 font-bold uppercase">Operativa / Al día</p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="text-[10px] text-texto/50 font-bold uppercase">Próx. Taller</p>
-                    <p class="text-xs font-bold text-texto mt-0.5">En 15 días</p>
-                </div>
-            </div>
-
+            @forelse($maquinasMantenimiento as $maquina)
             <div class="flex items-center justify-between p-3 border border-primario/30 rounded-xl bg-primario/5">
                 <div class="flex items-center">
                     <div class="bg-primario/10 p-2 rounded-lg mr-3">
@@ -94,18 +97,24 @@
                         </svg>
                     </div>
                     <div>
-                        <p class="font-black text-texto text-sm">XY-9876</p>
-                        <p class="text-[10px] text-texto/60 font-bold uppercase">Atención Preventiva</p>
+                        <p class="font-black text-texto text-sm">{{ $maquina->patente }}</p>
+                        <p class="text-[10px] text-texto/60 font-bold uppercase">
+                            {{ str_replace('_', ' ', $maquina->estado) }}
+                        </p>
                     </div>
                 </div>
                 <div class="text-right">
-                    <p class="text-[10px] text-texto/50 font-bold uppercase">Falla rep.</p>
-                    <p class="text-xs font-black text-primario mt-0.5">Neumáticos</p>
+                    <p class="text-[10px] text-texto/50 font-bold uppercase">Ingreso</p>
+                    <p class="text-xs font-black text-primario mt-0.5">{{ \Carbon\Carbon::parse($maquina->updated_at)->format('d/m H:i') }}</p>
                 </div>
             </div>
+            @empty
+            <div class="text-center py-4">
+                <p class="text-sm font-bold text-texto/50">Toda la flota se encuentra operativa, Señor.</p>
+            </div>
+            @endforelse
         </div>
     </div>
-
 </div>
 
 <!-- Integración de Chart.js -->
@@ -115,103 +124,118 @@
         Chart.defaults.font.family = "'Instrument Sans', sans-serif";
         Chart.defaults.color = '#3f3f46';
 
-        // Gráfico 1: Productividad (Vueltas Completadas - Vertical)
-        const ctxProductividad = document.getElementById('productividadChart').getContext('2d');
-        new Chart(ctxProductividad, {
-            type: 'bar',
-            data: {
-                labels: ['A. Rojas', 'J. Pérez', 'M. Soto', 'C. Díaz'],
-                datasets: [{
-                    label: 'Vueltas hoy',
-                    data: [8, 6, 7, 7],
-                    backgroundColor: '#65a30d', // acento (verde)
-                    borderRadius: 6,
-                    barThickness: 30,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        suggestedMax: 10,
-                        grid: {
-                            borderDash: [4, 4],
-                            color: '#e4e4e7'
-                        },
-                        ticks: {
-                            stepSize: 2
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            font: {
-                                weight: 'bold'
-                            }
-                        }
-                    }
-                }
+        // Sintaxis correcta para inyectar JSON desde Laravel a JavaScript
+        const etiquetasChoferes = {
+            {
+                Illuminate\ Support\ Js::from($labelsProductividad)
             }
-        });
+        };
+        const datosVueltas = {
+            {
+                Illuminate\ Support\ Js::from($datosProductividad)
+            }
+        };
+        const etiquetasEficiencia = {
+            {
+                Illuminate\ Support\ Js::from($labelsEficiencia)
+            }
+        };
+        const datosMinutos = {
+            {
+                Illuminate\ Support\ Js::from($datosEficiencia)
+            }
+        };
 
-        // Gráfico 2: Eficiencia de Ruta (Tiempo por Vuelta - Horizontal)
-        const ctxEficiencia = document.getElementById('eficienciaChart').getContext('2d');
-        new Chart(ctxEficiencia, {
-            type: 'bar',
-            data: {
-                labels: ['A. Rojas', 'J. Pérez', 'M. Soto', 'C. Díaz'],
-                datasets: [{
-                    label: 'Minutos Promedio',
-                    data: [42, 53, 46, 44],
-                    // Color condicional: Naranja si supera los 50 minutos
-                    backgroundColor: function(context) {
-                        const value = context.dataset.data[context.dataIndex];
-                        return value > 50 ? '#ea580c' : '#d4d4d8';
-                    },
-                    borderRadius: 6,
-                    barThickness: 20,
-                }]
-            },
-            options: {
-                indexAxis: 'y', // Gráfico horizontal
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+        // Gráfico 1: Productividad
+        if (document.getElementById('productividadChart')) {
+            new Chart(document.getElementById('productividadChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: etiquetasChoferes,
+                    datasets: [{
+                        label: 'Vueltas hoy',
+                        data: datosVueltas,
+                        backgroundColor: '#65a30d',
+                        borderRadius: 6,
+                        barThickness: 30,
+                    }]
                 },
-                scales: {
-                    x: {
-                        min: 30,
-                        max: 60,
-                        grid: {
-                            borderDash: [4, 4],
-                            color: '#e4e4e7'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     },
-                    y: {
-                        grid: {
-                            display: false
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 10,
+                            ticks: {
+                                stepSize: 2
+                            }
                         },
-                        ticks: {
-                            font: {
-                                weight: 'bold'
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    weight: 'bold'
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
+
+        // Gráfico 2: Eficiencia
+        if (document.getElementById('eficienciaChart')) {
+            new Chart(document.getElementById('eficienciaChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: etiquetasEficiencia,
+                    datasets: [{
+                        label: 'Minutos Promedio',
+                        data: datosMinutos,
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex];
+                            return value > 50 ? '#ea580c' : '#d4d4d8';
+                        },
+                        borderRadius: 6,
+                        barThickness: 20,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            min: 0,
+                            suggestedMax: 60
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     });
 </script>
 @endsection

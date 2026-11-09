@@ -3,47 +3,34 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Recorrido;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class MapaAdminControlador extends Controller
 {
     public function index()
     {
-        // 1. Extraemos SOLO las máquinas que actualmente están circulando hoy
-        $flotaEnRuta = Recorrido::with(['vehiculo', 'conductor'])
-            ->where('estado', 'en_ruta')
-            ->whereDate('hora_salida', Carbon::now('America/Santiago')->toDateString())
+        $microsActivas = DB::table('recorridos')
+            ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
+            ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
+            ->join('ubicacion_vehiculos', function ($join) {
+                $join->on('recorridos.id', '=', 'ubicacion_vehiculos.recorrido_id')
+                    ->whereRaw('ubicacion_vehiculos.id = (SELECT MAX(id) FROM ubicacion_vehiculos WHERE recorrido_id = recorridos.id)');
+            })
+            ->where('recorridos.estado', 'en_ruta')
+            ->whereDate('recorridos.hora_salida', Carbon::today('America/Santiago'))
+            ->select(
+                'vehiculos.id as vehiculoId',
+                'vehiculos.patente',
+                'usuarios.nombre as conductor', // Corrección aplicada aquí
+                'ubicacion_vehiculos.latitud as lat',
+                'ubicacion_vehiculos.longitud as lng',
+                'ubicacion_vehiculos.velocidad'
+            )
             ->get();
 
-        $cantidadActivas = $flotaEnRuta->count();
+        $cantidadActivas = $microsActivas->count();
 
-        // 2. Aquí simulamos temporalmente las coordenadas de los vehículos. 
-        // Cuando habilitemos la telemetría del conductor, estos datos vendrán directamente de la BD.
-        $coordenadasSimuladas = [
-            [
-                'id' => 'Micro 01',
-                'patente' => 'HY-KZ-16',
-                'conductor' => 'Patricio',
-                'lat' => -33.691350,
-                'lng' => -71.216721,
-                'status' => 'En tránsito normal',
-                'velocidad' => '65 km/h'
-            ],
-            [
-                'id' => 'Micro 02',
-                'patente' => 'CD-EF-34',
-                'conductor' => 'Arturo',
-                'lat' => -33.774302,
-                'lng' => -71.240641,
-                'status' => 'Detenido en parada',
-                'velocidad' => '0 km/h'
-            ]
-        ];
-
-        // Solo enviamos coordenadas si realmente hay micros en estado 'en_ruta' en su BD
-        $datosMapa = $cantidadActivas > 0 ? $coordenadasSimuladas : [];
-
-        return view('admin.mapa', compact('cantidadActivas', 'datosMapa'));
+        return view('admin.mapa', compact('cantidadActivas', 'microsActivas'));
     }
 }

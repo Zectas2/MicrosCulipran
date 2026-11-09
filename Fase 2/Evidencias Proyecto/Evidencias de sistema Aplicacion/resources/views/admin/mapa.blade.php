@@ -11,7 +11,7 @@
             </a>
             <h1 class="text-xl font-extrabold text-texto">Supervisión GPS</h1>
         </div>
-        <span class="bg-acento/20 text-acento px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider">
+        <span class="bg-acento/20 text-acento px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider" id="contador-activas">
             {{ $cantidadActivas }} Activas
         </span>
     </div>
@@ -35,55 +35,99 @@
             mapId: "ADMIN_MAP_ID",
             disableDefaultUI: false,
             zoomControl: true,
-            mapTypeControl: true, // Útil para el administrador
+            mapTypeControl: true,
             streetViewControl: false,
             fullscreenControl: true,
-            gestureHandling: 'greedy' // Desactiva los dos dedos
+            gestureHandling: 'greedy'
         });
 
-        // Inyectamos la flota en tránsito desde Laravel
-        const flotaActiva = @json($datosMapa ?? []);
+        const flotaActiva = {};
+        const microsIniciales = @json($microsActivas ?? []);
 
-        flotaActiva.forEach(micro => {
-            const iconDiv = document.createElement("div");
-            // Usamos un icono diferente para diferenciar el panel admin (color oscuro)
-            iconDiv.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="#1f2937" stroke="#ffffff" stroke-width="2" class="drop-shadow-lg"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg>`;
+        function actualizarMicro(vehiculoId, patente, lat, lng, velocidad, conductor = 'En tránsito') {
+            if (flotaActiva[vehiculoId]) {
+                flotaActiva[vehiculoId].position = new google.maps.LatLng(lat, lng);
+            } else {
+                const iconDiv = document.createElement("div");
+                iconDiv.style.cursor = "pointer";
 
-            const marker = new google.maps.marker.AdvancedMarkerElement({
-                position: {
-                    lat: micro.lat,
-                    lng: micro.lng
-                },
-                map: map,
-                title: micro.patente,
-                content: iconDiv
-            });
-
-            const infoWindow = new google.maps.InfoWindow();
-
-            marker.element.addEventListener("click", () => {
-                const infoHTML = `
-                    <div class="p-2 min-w-[180px]">
-                        <div class="flex justify-between items-start border-b border-gray-200 pb-2 mb-2">
-                            <div>
-                                <strong class="text-base text-gray-800">${micro.patente}</strong>
-                                <div class="text-[10px] uppercase font-bold text-gray-500 mt-1">${micro.id}</div>
+                // Reemplace el innerHTML con su diseño SVG 3D
+                iconDiv.innerHTML = `
+                        <div class="relative active:scale-90 transition-transform" style="width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0px 4px 5px rgba(0, 0, 0, 0.4));">
+                                <rect x="4" y="16" width="56" height="28" rx="6" fill="#0284c7" />
+                                <rect x="4" y="30" width="56" height="6" fill="#ffffff" />
+                                <rect x="4" y="30" width="16" height="6" fill="#facc15" />
+                                <rect x="8" y="20" width="10" height="8" rx="2" fill="#1e293b" />
+                                <rect x="22" y="20" width="10" height="8" rx="2" fill="#1e293b" />
+                                <rect x="36" y="20" width="10" height="8" rx="2" fill="#1e293b" />
+                                <rect x="50" y="20" width="6" height="8" rx="2" fill="#1e293b" />
+                                <circle cx="16" cy="44" r="7" fill="#0f172a" />
+                                <circle cx="16" cy="44" r="3.5" fill="#94a3b8" />
+                                <circle cx="48" cy="44" r="7" fill="#0f172a" />
+                                <circle cx="48" cy="44" r="3.5" fill="#94a3b8" />
+                                <path d="M60 34 C60 34, 62 34, 62 36 L62 40 C62 40, 60 40, 60 40 Z" fill="#fef08a" />
+                                <rect x="4" y="34" width="2" height="6" fill="#ef4444" />
+                            </svg>
+                            <div class="absolute -top-3 bg-texto/95 text-secundario text-[10px] font-black px-1.5 py-0.5 rounded border border-gray-600 shadow-md whitespace-nowrap">
+                                ${patente}
                             </div>
-                            <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-black uppercase">GPS OK</span>
                         </div>
-                        <div class="space-y-1 mt-2">
-                            <div class="text-xs text-gray-700"><span class="font-bold">Chofer:</span> ${micro.conductor}</div>
-                            <div class="text-xs text-gray-700"><span class="font-bold">Velocidad:</span> <span class="text-blue-600">${micro.velocidad}</span></div>
-                            <div class="text-xs text-gray-700"><span class="font-bold">Estado:</span> ${micro.status}</div>
+                    `;
+
+                const marker = new google.maps.marker.AdvancedMarkerElement({
+                    position: {
+                        lat: parseFloat(lat),
+                        lng: parseFloat(lng)
+                    },
+                    map: map,
+                    title: patente,
+                    content: iconDiv
+                });
+
+                const infoWindow = new google.maps.InfoWindow();
+
+                marker.element.addEventListener("gmp-click", () => {
+                    const infoHTML = `
+                        <div class="p-2 min-w-[180px]">
+                            <div class="flex justify-between items-start border-b border-gray-200 pb-2 mb-2">
+                                <div>
+                                    <strong class="text-base text-gray-800">${patente}</strong>
+                                    <div class="text-[10px] uppercase font-bold text-gray-500 mt-1">ID: ${vehiculoId}</div>
+                                </div>
+                                <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-black uppercase">GPS OK</span>
+                            </div>
+                            <div class="space-y-1 mt-2">
+                                <div class="text-xs text-gray-700"><span class="font-bold">Chofer:</span> ${conductor}</div>
+                                <div class="text-xs text-gray-700"><span class="font-bold">Velocidad:</span> <span class="text-blue-600">${velocidad} km/h</span></div>
+                            </div>
                         </div>
-                    </div>
-                `;
-                infoWindow.setContent(infoHTML);
-                infoWindow.open(map, marker);
-            });
+                    `;
+                    infoWindow.setContent(infoHTML);
+                    infoWindow.open(map, marker);
+                });
+
+                flotaActiva[vehiculoId] = marker;
+                document.getElementById('contador-activas').innerText = `${Object.keys(flotaActiva).length} Activas`;
+            }
+        }
+
+        // 1. Cargar estado inicial
+        microsIniciales.forEach(micro => {
+            actualizarMicro(micro.vehiculoId, micro.patente, micro.lat, micro.lng, micro.velocidad, micro.conductor);
         });
+
+        // 2. Conectar radar en tiempo real
+        setTimeout(() => {
+            if (window.Echo) {
+                window.Echo.channel('flota-vivo')
+                    .listen('.PosicionActualizada', (evento) => {
+                        actualizarMicro(evento.vehiculoId, evento.patente, evento.latitud, evento.longitud, evento.velocidad);
+                    });
+            }
+        }, 500);
     };
 </script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCCX0SeguX9YMrSGpiiOwwe3eU-ei5YhL4&loading=async&libraries=marker&callback=initMapAdmin" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ env('VITE_GOOGLE_MAPS_KEY') }}&loading=async&libraries=marker&callback=initMapAdmin" async defer></script>
 @endsection
