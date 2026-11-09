@@ -176,7 +176,7 @@ $vueltasTotales = $turnosHoy->count();
                 switch (estado) {
                     case 'OK':
                         indicadorRed.classList.add('bg-green-500');
-                        estadoTexto.innerText = "Conexión estable. Transmitiendo GPS.";
+                        estadoTexto.innerText = "Conexión estable. Transmitiendo GPS cada 5s.";
                         break;
                     case 'OFFLINE':
                         indicadorRed.classList.add('bg-red-500');
@@ -192,61 +192,70 @@ $vueltasTotales = $turnosHoy->count();
             const opcionesGps = {
                 enableHighAccuracy: true,
                 maximumAge: 0,
-                timeout: 5000 // Si el GPS tarda más de 5s en leer, intenta de nuevo
+                timeout: 4500 // Ajustado para que falle justo antes del próximo ciclo de 5s si no hay señal
             };
 
-            const watchId = navigator.geolocation.watchPosition(
-                async function(posicion) {
-                        const latitud = posicion.coords.latitude;
-                        const longitud = posicion.coords.longitude;
-                        const velocidad = posicion.coords.speed ? (posicion.coords.speed * 3.6).toFixed(2) : 0;
+            // Función central de transmisión
+            const transmitirUbicacion = () => {
+                navigator.geolocation.getCurrentPosition(
+                    async function(posicion) {
+                            const latitud = posicion.coords.latitude;
+                            const longitud = posicion.coords.longitude;
+                            const velocidad = posicion.coords.speed ? (posicion.coords.speed * 3.6).toFixed(2) : 0;
 
-                        // 1. Control de Timeout para conexiones 3G/E lentas
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 segundos máx de espera por pulso
+                            // 1. Control de Timeout para la petición HTTP
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-                        try {
-                            const response = await fetch("{{ route('conductor.telemetria', $turnoActual->id) }}", {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                                    "Accept": "application/json"
-                                },
-                                body: JSON.stringify({
-                                    lat: latitud,
-                                    lng: longitud,
-                                    velocidad: velocidad
-                                }),
-                                signal: controller.signal // Inyectamos el control de aborto
-                            });
+                            try {
+                                const response = await fetch("{{ route('conductor.telemetria', $turnoActual->id) }}", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                                        "Accept": "application/json"
+                                    },
+                                    body: JSON.stringify({
+                                        lat: latitud,
+                                        lng: longitud,
+                                        velocidad: velocidad
+                                    }),
+                                    signal: controller.signal
+                                });
 
-                            clearTimeout(timeoutId); // Limpiamos el contador si respondió a tiempo
+                                clearTimeout(timeoutId);
 
-                            if (response.ok) {
-                                actualizarSemaforo('OK');
-                            } else {
-                                actualizarSemaforo('LENTO'); // El server respondió, pero con error (ej. 500)
+                                if (response.ok) {
+                                    actualizarSemaforo('OK');
+                                } else {
+                                    actualizarSemaforo('LENTO');
+                                }
+
+                            } catch (error) {
+                                if (error.name === 'AbortError') {
+                                    console.warn('Transmisión abortada: La red está muy lenta.');
+                                    actualizarSemaforo('LENTO');
+                                } else {
+                                    console.warn('Fallo de red: No hay internet en este sector.');
+                                    actualizarSemaforo('OFFLINE');
+                                }
                             }
+                        },
+                        function(error) {
+                            console.warn('Señal GPS perdida o denegada:', error.message);
+                            if (estadoTexto) estadoTexto.innerText = "Error GPS: Asegúrese de estar al aire libre.";
+                            if (indicadorRed) indicadorRed.classList.replace('bg-green-500', 'bg-red-500');
+                        },
+                        opcionesGps
+                );
+            };
 
-                        } catch (error) {
-                            // 2. Captura de fallos de red
-                            if (error.name === 'AbortError') {
-                                console.warn('Transmisión abortada: La red está muy lenta.');
-                                actualizarSemaforo('LENTO');
-                            } else {
-                                console.warn('Fallo de red: No hay internet en este sector.');
-                                actualizarSemaforo('OFFLINE');
-                            }
-                        }
-                    },
-                    function(error) {
-                        console.warn('Señal GPS perdida o denegada:', error.message);
-                        if (estadoTexto) estadoTexto.innerText = "Error GPS: Asegúrese de estar al aire libre.";
-                        if (indicadorRed) indicadorRed.classList.replace('bg-green-500', 'bg-red-500');
-                    },
-                    opcionesGps
-            );
+            // Ejecutamos el primer pulso de inmediato al cargar la vista
+            transmitirUbicacion();
+
+            // BUCLE ESTRICTO: Obligamos al navegador a ejecutar la función exactamente cada 5000 milisegundos
+            setInterval(transmitirUbicacion, 5000);
+
         } else {
             alert("El navegador de su dispositivo no soporta la lectura satelital GPS.");
         }
