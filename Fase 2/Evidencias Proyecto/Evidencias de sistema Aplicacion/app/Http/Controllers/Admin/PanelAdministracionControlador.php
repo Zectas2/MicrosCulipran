@@ -12,12 +12,14 @@ class PanelAdministracionControlador extends Controller
     {
         $hoy = Carbon::today('America/Santiago');
 
-        // Métricas rápidas por si la vista principal (admin.index) las requiere
+        // CORECCIÓN: Añadimos el filtro whereDate para evitar registros fantasma de días anteriores
         $microsEnRuta = DB::table('recorridos')
             ->where('estado', 'en_ruta')
+            ->whereDate('hora_salida', $hoy)
             ->count();
 
         $totalVehiculos = DB::table('vehiculos')->count();
+
         $vehiculosOperativos = DB::table('vehiculos')
             ->where('estado', 'operativo')
             ->count();
@@ -96,6 +98,4 @@ class PanelAdministracionControlador extends Controller
             'maquinasMantenimiento'
         ));
     }
-
-    
 }
