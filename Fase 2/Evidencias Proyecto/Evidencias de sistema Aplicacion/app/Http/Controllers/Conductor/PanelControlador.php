@@ -159,6 +159,19 @@ class PanelControlador extends Controller
                 ]);
             }
 
+            // AJUSTE ESTRATÉGICO: Desactiva el escudo SSL interno solo para esta petición
+            config(['broadcasting.connections.reverb.client_options.verify' => false]);
+
+            // 2. Emitimos el evento de WebSocket instantáneo para los pasajeros
+            event(new \App\Events\UbicacionTransmitida(
+                $recorrido->recorrido_id,
+                $recorrido->vehiculo_id,
+                $recorrido->patente,
+                $request->lat,
+                $request->lng,
+                $request->velocidad
+            ));
+
             return response()->json(['status' => 'Ubicación transmitida y procesada correctamente']);
         } catch (\Exception $e) {
             // AQUI ESTÁ EL DIAGNÓSTICO

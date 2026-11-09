@@ -32,23 +32,23 @@ return [
 
         'reverb' => [
             'driver' => 'reverb',
-            'key' => env('REVERB_APP_KEY', 'culipran_key'),
-            'secret' => env('REVERB_APP_SECRET', 'culipran_secret'),
-            'app_id' => env('REVERB_APP_ID', 'culipran_app'),
+            'key' => env('REVERB_APP_KEY'),
+            'secret' => env('REVERB_APP_SECRET'),
+            'app_id' => env('REVERB_APP_ID'),
             'options' => [
-                'host' => env('REVERB_HOST', '127.0.0.1'),
-                'port' => env('REVERB_PORT', 8080),
-                'scheme' => env('REVERB_SCHEME', 'http'),
-                'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
+                'host' => env('REVERB_HOST', 'ws.microsculipran.duckdns.org'),
+                'port' => env('REVERB_PORT', 443),
+                'scheme' => env('REVERB_SCHEME', 'https'),
+                'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
 
-                // Excepción añadida para el motor de cURL interno
+                // Mantenemos la directiva para ignorar errores SSL locales
                 'curl_options' => [
                     CURLOPT_SSL_VERIFYHOST => 0,
                     CURLOPT_SSL_VERIFYPEER => 0,
                 ],
             ],
             'client_options' => [
-                // Excepción añadida para Guzzle
+                // Mantenemos la excepción para Guzzle
                 'verify' => false,
             ],
         ],
