@@ -96,4 +96,6 @@ class PanelAdministracionControlador extends Controller
             'maquinasMantenimiento'
         ));
     }
+
+    
 }
