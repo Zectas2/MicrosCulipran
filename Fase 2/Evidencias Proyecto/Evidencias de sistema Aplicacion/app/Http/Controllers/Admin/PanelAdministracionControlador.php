@@ -10,35 +10,63 @@ class PanelAdministracionControlador extends Controller
 {
     public function index()
     {
-        $hoy = Carbon::today('America/Santiago');
+        $hoy = \Carbon\Carbon::today('America/Santiago');
 
-        // CORECCIÓN: Añadimos el filtro whereDate para evitar registros fantasma de días anteriores
-        $microsEnRuta = DB::table('recorridos')
+        // 1. KPI: Micros en ruta (con filtro de fecha para evitar registros colgados)
+        $microsEnRuta = \Illuminate\Support\Facades\DB::table('recorridos')
             ->where('estado', 'en_ruta')
             ->whereDate('hora_salida', $hoy)
             ->count();
 
-        $totalVehiculos = DB::table('vehiculos')->count();
-
-        $vehiculosOperativos = DB::table('vehiculos')
-            ->where('estado', 'operativo')
-            ->count();
-
-        $choferesActivos = DB::table('usuarios')
-            ->where('rol', 'conductor')
-            ->where('estado', 'activo')
-            ->count();
-
-        $turnosHoy = DB::table('recorridos')
+        // 2. KPI: Recorridos Hoy (Renombrado de $turnosHoy a $recorridosHoy para coincidir con la vista)
+        $recorridosHoy = \Illuminate\Support\Facades\DB::table('recorridos')
             ->whereDate('hora_salida', $hoy)
             ->count();
 
+        // 3. KPI: Alertas (Consultamos si hay vehículos en pana)
+        $alertas = \Illuminate\Support\Facades\DB::table('vehiculos')
+            ->where('estado', 'en_mantencion')
+            ->count();
+
+        // 4. Módulo de Flota Activa: Construimos el objeto exacto que su vista espera renderizar
+        $flotaActiva = \Illuminate\Support\Facades\DB::table('recorridos')
+            ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
+            ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
+            ->where('recorridos.estado', 'en_ruta')
+            ->whereDate('recorridos.hora_salida', $hoy)
+            ->select(
+                'vehiculos.patente',
+                'usuarios.nombre as conductor',
+                'recorridos.hora_salida'
+            )
+            ->get()
+            ->map(function ($recorrido) {
+                // Inyectamos las clases de diseño y datos formateados que el Blade necesita
+                $recorrido->bgColor = 'bg-white';
+                $recorrido->iconBg = 'bg-primario/10';
+                $recorrido->iconColor = 'text-primario';
+                $recorrido->textoEstado = 'En Ruta';
+                $recorrido->badgeClass = 'bg-green-100 text-green-800'; // Semáforo en verde
+
+                // Cálculos de tiempo en tránsito
+                $horaSalida = \Carbon\Carbon::parse($recorrido->hora_salida)->timezone('America/Santiago');
+                $recorrido->horaSalidaFormateada = $horaSalida->format('H:i');
+
+                $recorrido->etiquetaTiempo = 'Tiempo en ruta';
+                $minutos = $horaSalida->diffInMinutes(\Carbon\Carbon::now('America/Santiago'));
+                $recorrido->valorTiempo = $minutos . ' min';
+
+                $recorrido->textoTiempoClase = 'text-gray-700';
+                $recorrido->bordeClase = 'border-gray-200';
+
+                return $recorrido;
+            });
+
         return view('admin.index', compact(
             'microsEnRuta',
-            'totalVehiculos',
-            'vehiculosOperativos',
-            'choferesActivos',
-            'turnosHoy'
+            'recorridosHoy',
+            'alertas',
+            'flotaActiva'
         ));
     }
 
