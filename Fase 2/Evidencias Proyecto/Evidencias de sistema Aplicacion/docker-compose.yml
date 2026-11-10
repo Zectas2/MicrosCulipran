@@ -13,19 +13,3 @@ services:
       - APP_ENV=production
       - APP_DEBUG=false
       # Las demás variables de Supabase se configurarán directamente en el panel de Dokploy
-
-  # 2. El motor de WebSockets (Radar GPS)
-  reverb:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    # AQUÍ ESTÁ EL CAMBIO: El --debug se agrega a la misma línea del comando
-    command: php artisan reverb:start --host=0.0.0.0 --port=8080 --debug
-    restart: unless-stopped
-    # PARCHE CRÍTICO: Desactivar el chequeo de salud para que Dokploy no bloquee el tráfico WSS
-    healthcheck:
-      disable: true
-    ports:
-      - "6001:8080" # Puerto independiente para la telemetría en vivo
-    depends_on:
-      - web
