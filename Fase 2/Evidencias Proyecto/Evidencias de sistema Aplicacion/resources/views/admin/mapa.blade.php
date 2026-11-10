@@ -123,12 +123,15 @@
 
         // 2. Conectar radar en tiempo real
         setTimeout(() => {
-            if (window.Echo) {
+            console.log("🔍 [Sistema] Verificando motor de WebSockets (Laravel Echo)...");
+
+            if (typeof window.Echo !== 'undefined') {
+                console.log("✅ [Reverb] Motor Echo detectado. Suscribiendo al canal 'flota-vivo'...");
+
                 window.Echo.channel('flota-vivo')
                     .listen('.PosicionActualizada', (evento) => {
-                        console.log("📡 [Reverb Admin] Evento RAW:", evento);
+                        console.log("📡 [Reverb Admin] EVENTO RECIBIDO DESDE EL SERVIDOR:", evento);
 
-                        // CORRECCIÓN 2: Normalizamos las variables por si el backend las nombra distinto
                         const lat = evento.lat || evento.latitud;
                         const lng = evento.lng || evento.longitud;
                         const vId = evento.vehiculoId || evento.vehiculo_id || evento.id;
@@ -136,11 +139,18 @@
                         if (lat && lng && vId) {
                             actualizarMicro(vId, evento.patente, lat, lng, evento.velocidad);
                         } else {
-                            console.error("⚠️ Faltan datos en el evento. Verifique el backend.", evento);
+                            console.error("⚠️ [Error de Datos] Faltan coordenadas o ID en el evento.", evento);
                         }
+                    })
+                    .error((error) => {
+                        console.error("❌ [Reverb] Error en el canal:", error);
                     });
+            } else {
+                console.error("❌ [Fallo Crítico] window.Echo NO está definido. Posibles causas:");
+                console.error("1. Falta compilar los assets (ejecute 'npm run build' en el servidor).");
+                console.error("2. No se importó @vite(['resources/js/app.js']) en layouts/app.blade.php.");
             }
-        }, 500);
+        }, 1500); // Aumentamos el margen de carga a 1.5 segundos para asegurar que app.js inicie
     };
 </script>
 
