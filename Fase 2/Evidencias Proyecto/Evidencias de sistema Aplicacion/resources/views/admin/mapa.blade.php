@@ -46,12 +46,16 @@
 
         function actualizarMicro(vehiculoId, patente, lat, lng, velocidad, conductor = 'En tránsito') {
             if (flotaActiva[vehiculoId]) {
-                flotaActiva[vehiculoId].position = new google.maps.LatLng(lat, lng);
+                // CORRECCIÓN 1: AdvancedMarkerElement requiere un objeto literal, no new google.maps.LatLng
+                flotaActiva[vehiculoId].position = {
+                    lat: parseFloat(lat),
+                    lng: parseFloat(lng)
+                };
+                console.log(`📍 [Mapa Actualizado] Máquina ${patente} movida en el mapa.`);
             } else {
                 const iconDiv = document.createElement("div");
                 iconDiv.style.cursor = "pointer";
 
-                // Reemplace el innerHTML con su diseño SVG 3D
                 iconDiv.innerHTML = `
                         <div class="relative active:scale-90 transition-transform" style="width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                             <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0px 4px 5px rgba(0, 0, 0, 0.4));">
@@ -122,8 +126,18 @@
             if (window.Echo) {
                 window.Echo.channel('flota-vivo')
                     .listen('.PosicionActualizada', (evento) => {
-                        console.log("📡 [Telemetría Recibida] Máquina:", evento.patente, "| Lat:", evento.lat, "| Lng:", evento.lng);
-                        actualizarMicro(evento.vehiculoId, evento.patente, evento.latitud, evento.longitud, evento.velocidad);
+                        console.log("📡 [Reverb Admin] Evento RAW:", evento);
+
+                        // CORRECCIÓN 2: Normalizamos las variables por si el backend las nombra distinto
+                        const lat = evento.lat || evento.latitud;
+                        const lng = evento.lng || evento.longitud;
+                        const vId = evento.vehiculoId || evento.vehiculo_id || evento.id;
+
+                        if (lat && lng && vId) {
+                            actualizarMicro(vId, evento.patente, lat, lng, evento.velocidad);
+                        } else {
+                            console.error("⚠️ Faltan datos en el evento. Verifique el backend.", evento);
+                        }
                     });
             }
         }, 500);
