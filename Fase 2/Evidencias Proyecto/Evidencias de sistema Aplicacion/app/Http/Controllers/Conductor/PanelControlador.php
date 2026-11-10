@@ -98,6 +98,10 @@ class PanelControlador extends Controller
 
     public function transmitirUbicacion(Request $request, $id)
     {
+        // AJUSTE CRÍTICO: Desactivamos el escudo SSL ANTES de cualquier conexión
+        // Esto garantiza que el motor de Reverb se inicialice con esta regla en Dokploy.
+        config(['broadcasting.connections.reverb.client_options.verify' => false]);
+
         try {
             $request->validate([
                 'lat' => 'required|numeric',
@@ -107,7 +111,7 @@ class PanelControlador extends Controller
 
             $conductorId = Auth::id();
 
-            // 1. Validamos que el recorrido exista, esté en ruta y pertenezca al conductor actual
+            // 1. Validamos que el recorrido exista y esté en ruta
             $recorrido = DB::table('recorridos')
                 ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
                 ->where('recorridos.id', $id)
@@ -120,18 +124,8 @@ class PanelControlador extends Controller
                 return response()->json(['error' => 'Recorrido no válido o inactivo'], 403);
             }
 
-            // 2. Emitimos el evento de WebSocket instantáneo para los pasajeros
-            event(new \App\Events\UbicacionTransmitida(
-                $recorrido->recorrido_id,
-                $recorrido->vehiculo_id,
-                $recorrido->patente,
-                $request->lat,
-                $request->lng,
-                $request->velocidad
-            ));
-
-            // 3. Estrategia de optimización (Inteligencia de Negocios): 
-            // Solo guardamos en la base de datos si ha pasado más de 1 minuto desde el último registro
+            // 2. Estrategia de optimización (Inteligencia de Negocios): 
+            // Guardamos en la base de datos solo si ha pasado más de 1 minuto
             $ultimoRegistro = DB::table('ubicacion_vehiculos')
                 ->where('recorrido_id', $recorrido->recorrido_id)
                 ->orderBy('created_at', 'desc')
@@ -159,11 +153,8 @@ class PanelControlador extends Controller
                 ]);
             }
 
-            // AJUSTE ESTRATÉGICO: Desactiva el escudo SSL interno solo para esta petición
-            config(['broadcasting.connections.reverb.client_options.verify' => false]);
-
-            // 2. Emitimos el evento de WebSocket instantáneo para los pasajeros
-            event(new \App\Events\UbicacionTransmitida(
+            // 3. ÚNICA EMISIÓN AL WEBSOCKET: Usamos el helper nativo broadcast()
+            broadcast(new \App\Events\UbicacionTransmitida(
                 $recorrido->recorrido_id,
                 $recorrido->vehiculo_id,
                 $recorrido->patente,
@@ -174,7 +165,6 @@ class PanelControlador extends Controller
 
             return response()->json(['status' => 'Ubicación transmitida y procesada correctamente']);
         } catch (\Exception $e) {
-            // AQUI ESTÁ EL DIAGNÓSTICO
             return response()->json([
                 'error_detectado' => 'Falla en el servidor',
                 'mensaje_tecnico' => $e->getMessage(),
