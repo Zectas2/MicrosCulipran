@@ -218,6 +218,9 @@ $vueltasTotales = $turnosHoy->count();
         };
 
         const enviarDatosAlServidor = async (latitud, longitud, velocidad) => {
+            // INYECCIÓN DE DIAGNÓSTICO: Registro de preparación
+            console.log("🚀 [Telemetria] Preparando envío -> Lat: " + latitud + ", Lng: " + longitud + ", Vel: " + velocidad + " km/h");
+
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 4000);
 
@@ -240,14 +243,23 @@ $vueltasTotales = $turnosHoy->count();
                 clearTimeout(timeoutId);
 
                 if (response.ok) {
+                    // INYECCIÓN DE DIAGNÓSTICO: Registro de éxito
+                    const data = await response.json().catch(() => ({}));
+                    console.log("✅ [Servidor OK] Paquete procesado correctamente:", data);
                     actualizarSemaforo('OK');
                 } else {
+                    // INYECCIÓN DE DIAGNÓSTICO: Registro de error HTTP
+                    console.warn("⚠️ [Servidor Error] Código de respuesta HTTP:", response.status);
                     actualizarSemaforo('LENTO');
                 }
             } catch (error) {
                 if (error.name === 'AbortError') {
+                    // INYECCIÓN DE DIAGNÓSTICO: Registro de timeout
+                    console.error("⏱️ [Timeout] La petición tardó más de 4 segundos en responder.");
                     actualizarSemaforo('LENTO');
                 } else {
+                    // INYECCIÓN DE DIAGNÓSTICO: Registro de desconexión
+                    console.error("❌ [Fallo de Red] No se pudo conectar con el servidor:", error);
                     actualizarSemaforo('OFFLINE');
                 }
             }
