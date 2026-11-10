@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8000:8080" # Dokploy enrutará microsculipran.tech hacia aquí
+      - "8000:8080" # Dokploy enrutará microsculipran.duckdns.org hacia aquí
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
@@ -19,8 +19,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: php artisan reverb:start --host="0.0.0.0" --port="8080"
+    # Corrección: Comillas removidas para evitar errores de sintaxis en el shell interno
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
     restart: unless-stopped
+    # PARCHE CRÍTICO: Desactivar el chequeo de salud para que Dokploy no bloquee el tráfico WSS
+    healthcheck:
+      disable: true
     ports:
       - "6001:8080" # Puerto independiente para la telemetría en vivo
     depends_on:
