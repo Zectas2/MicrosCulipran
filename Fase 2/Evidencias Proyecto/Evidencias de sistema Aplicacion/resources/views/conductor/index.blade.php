@@ -163,102 +163,135 @@ $vueltasTotales = $turnosHoy->count();
 @if($turnoActual && $turnoActual->estado === 'en_ruta')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        if ("geolocation" in navigator) {
-            const indicadorRed = document.getElementById('indicador-red');
-            const estadoTexto = document.getElementById('estado-conexion-texto');
 
-            // Función visual para actualizar el estado del semáforo
-            const actualizarSemaforo = (estado) => {
-                if (!indicadorRed || !estadoTexto) return;
+        // =================================================================
+        // MÓDULO DE SIMULACIÓN (HERRAMIENTA DE TESTEO)
+        // =================================================================
+        const MODO_SIMULACION = true; // <-- Cambie a 'false' para volver al GPS real
 
-                indicadorRed.classList.remove('bg-gray-400', 'bg-green-500', 'bg-red-500', 'bg-yellow-500');
+        let indiceRuta = 0;
+        // Coordenadas extraídas de la Ruta G-60 (Culiprán -> Melipilla Centro)
+        const rutaCulipranMelipilla = [{
+                lat: -33.785000,
+                lng: -71.245000
+            },
+            {
+                lat: -33.765000,
+                lng: -71.238000
+            },
+            {
+                lat: -33.742000,
+                lng: -71.231000
+            },
+            {
+                lat: -33.718000,
+                lng: -71.225000
+            },
+            {
+                lat: -33.691356,
+                lng: -71.216710
+            }
+        ];
+        // =================================================================
 
-                switch (estado) {
-                    case 'OK':
-                        indicadorRed.classList.add('bg-green-500');
-                        estadoTexto.innerText = "Conexión estable. Transmitiendo GPS cada 5s.";
-                        break;
-                    case 'OFFLINE':
-                        indicadorRed.classList.add('bg-red-500');
-                        estadoTexto.innerText = "Sin internet. Reconectando en segundo plano...";
-                        break;
-                    case 'LENTO':
-                        indicadorRed.classList.add('bg-yellow-500');
-                        estadoTexto.innerText = "Conexión inestable. El mapa podría verse desfasado.";
-                        break;
+        const indicadorRed = document.getElementById('indicador-red');
+        const estadoTexto = document.getElementById('estado-conexion-texto');
+
+        const actualizarSemaforo = (estado) => {
+            if (!indicadorRed || !estadoTexto) return;
+            indicadorRed.classList.remove('bg-gray-400', 'bg-green-500', 'bg-red-500', 'bg-yellow-500');
+
+            switch (estado) {
+                case 'OK':
+                    indicadorRed.classList.add('bg-green-500');
+                    estadoTexto.innerText = MODO_SIMULACION ? "SIMULACIÓN ACTIVA: Emitiendo GPS falso." : "Conexión estable. Transmitiendo GPS cada 5s.";
+                    break;
+                case 'OFFLINE':
+                    indicadorRed.classList.add('bg-red-500');
+                    estadoTexto.innerText = "Sin internet. Reconectando en segundo plano...";
+                    break;
+                case 'LENTO':
+                    indicadorRed.classList.add('bg-yellow-500');
+                    estadoTexto.innerText = "Conexión inestable. El mapa podría verse desfasado.";
+                    break;
+            }
+        };
+
+        const enviarDatosAlServidor = async (latitud, longitud, velocidad) => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+            try {
+                const response = await fetch("{{ route('conductor.telemetria', $turnoActual->id) }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        lat: latitud,
+                        lng: longitud,
+                        velocidad: velocidad
+                    }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    actualizarSemaforo('OK');
+                } else {
+                    actualizarSemaforo('LENTO');
                 }
-            };
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    actualizarSemaforo('LENTO');
+                } else {
+                    actualizarSemaforo('OFFLINE');
+                }
+            }
+        };
 
-            const opcionesGps = {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 4500 // Ajustado para que falle justo antes del próximo ciclo de 5s si no hay señal
-            };
+        const procesarUbicacion = () => {
+            if (MODO_SIMULACION) {
+                // SIMULADOR: Toma un punto de la ruta y avanza
+                const coords = rutaCulipranMelipilla[indiceRuta];
+                enviarDatosAlServidor(coords.lat, coords.lng, 45.0); // Simula 45 km/h
 
-            // Función central de transmisión
-            const transmitirUbicacion = () => {
-                navigator.geolocation.getCurrentPosition(
-                    async function(posicion) {
-                            const latitud = posicion.coords.latitude;
-                            const longitud = posicion.coords.longitude;
-                            const velocidad = posicion.coords.speed ? (posicion.coords.speed * 3.6).toFixed(2) : 0;
-
-                            // 1. Control de Timeout para la petición HTTP
-                            const controller = new AbortController();
-                            const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-                            try {
-                                const response = await fetch("{{ route('conductor.telemetria', $turnoActual->id) }}", {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                                        "Accept": "application/json"
-                                    },
-                                    body: JSON.stringify({
-                                        lat: latitud,
-                                        lng: longitud,
-                                        velocidad: velocidad
-                                    }),
-                                    signal: controller.signal
-                                });
-
-                                clearTimeout(timeoutId);
-
-                                if (response.ok) {
-                                    actualizarSemaforo('OK');
-                                } else {
-                                    actualizarSemaforo('LENTO');
-                                }
-
-                            } catch (error) {
-                                if (error.name === 'AbortError') {
-                                    console.warn('Transmisión abortada: La red está muy lenta.');
-                                    actualizarSemaforo('LENTO');
-                                } else {
-                                    console.warn('Fallo de red: No hay internet en este sector.');
-                                    actualizarSemaforo('OFFLINE');
-                                }
-                            }
+                indiceRuta++;
+                if (indiceRuta >= rutaCulipranMelipilla.length) {
+                    indiceRuta = 0; // Reinicia el ciclo al llegar al final
+                }
+            } else {
+                // PRODUCCIÓN: Lee la antena GPS real del dispositivo
+                if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(posicion) {
+                            const lat = posicion.coords.latitude;
+                            const lng = posicion.coords.longitude;
+                            const vel = posicion.coords.speed ? (posicion.coords.speed * 3.6).toFixed(2) : 0;
+                            enviarDatosAlServidor(lat, lng, vel);
                         },
                         function(error) {
                             console.warn('Señal GPS perdida o denegada:', error.message);
                             if (estadoTexto) estadoTexto.innerText = "Error GPS: Asegúrese de estar al aire libre.";
                             if (indicadorRed) indicadorRed.classList.replace('bg-green-500', 'bg-red-500');
-                        },
-                        opcionesGps
-                );
-            };
+                        }, {
+                            enableHighAccuracy: true,
+                            maximumAge: 0,
+                            timeout: 4500
+                        }
+                    );
+                } else {
+                    alert("El navegador de su dispositivo no soporta la lectura satelital GPS.");
+                }
+            }
+        };
 
-            // Ejecutamos el primer pulso de inmediato al cargar la vista
-            transmitirUbicacion();
-
-            // BUCLE ESTRICTO: Obligamos al navegador a ejecutar la función exactamente cada 5000 milisegundos
-            setInterval(transmitirUbicacion, 5000);
-
-        } else {
-            alert("El navegador de su dispositivo no soporta la lectura satelital GPS.");
-        }
+        // Disparo inicial y bucle de 5 segundos
+        procesarUbicacion();
+        setInterval(procesarUbicacion, 5000);
     });
 </script>
 @endif

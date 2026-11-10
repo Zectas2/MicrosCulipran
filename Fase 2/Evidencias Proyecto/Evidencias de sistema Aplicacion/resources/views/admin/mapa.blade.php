@@ -122,6 +122,7 @@
             if (window.Echo) {
                 window.Echo.channel('flota-vivo')
                     .listen('.PosicionActualizada', (evento) => {
+                        console.log("📡 [Telemetría Recibida] Máquina:", evento.patente, "| Lat:", evento.lat, "| Lng:", evento.lng);
                         actualizarMicro(evento.vehiculoId, evento.patente, evento.latitud, evento.longitud, evento.velocidad);
                     });
             }
