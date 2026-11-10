@@ -3,17 +3,17 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
-// Extraemos las variables inyectadas por Vite desde su .env en el servidor
+// Detectamos si el sistema se está ejecutando en local o en producción
+const esLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+
 window.Echo = new Echo({
     broadcaster: 'reverb',
-    key: import.meta.env.VITE_REVERB_APP_KEY,
-    wsHost: import.meta.env.VITE_REVERB_HOST,
-    wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
-    wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-    enabledTransports: ['ws', 'wss'],
-    // PARÁMETROS CRÍTICOS FALTANTES:
+    key: 'irfhn03d72xaqk9bsccf', // Llave pública de Dokploy
+    wsHost: esLocal ? '127.0.0.1' : 'ws.microsculipran.duckdns.org',
+    wsPort: esLocal ? 8080 : 80,
+    wssPort: esLocal ? 8080 : 443,
+    forceTLS: !esLocal,
     disableStats: true,
-    cluster: 'mt1',
-    authEndpoint: '/broadcasting/auth'
+    enabledTransports: ['ws', 'wss'],
+    cluster: 'mt1' // Obligatorio por el estándar interno de la librería
 });
