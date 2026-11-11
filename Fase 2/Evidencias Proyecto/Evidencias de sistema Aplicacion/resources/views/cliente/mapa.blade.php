@@ -162,18 +162,19 @@
             actualizarMicro(micro.vehiculoId, micro.patente, micro.lat, micro.lng, micro.velocidad);
         });
 
-        // Fase 2: Escuchar actualizaciones satelitales en tiempo real
-        setTimeout(() => {
-            if (window.Echo) {
-                console.log("Conectado al radar de Laravel Reverb. Esperando coordenadas...");
-                window.Echo.channel('flota-vivo')
-                    .listen('.PosicionActualizada', (evento) => {
-                        actualizarMicro(evento.vehiculoId, evento.patente, evento.latitud, evento.longitud, evento.velocidad);
-                    });
-            } else {
-                console.error("El radar (Laravel Echo) no está disponible. Asegúrese de importar Vite en su layout.");
-            }
-        }, 500);
+        // Fase 2: Escuchar actualizaciones satelitales mediante HTTP Polling
+        setInterval(() => {
+            fetch('/mapa/datos-vivo')
+                .then(response => response.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        data.forEach(micro => {
+                            actualizarMicro(micro.vehiculoId, micro.patente, micro.lat, micro.lng, micro.velocidad);
+                        });
+                    }
+                })
+                .catch(error => console.error("⚠️ Error consultando el radar GPS:", error));
+        }, 5000); // Consulta silenciosa cada 5 segundos
     };
 </script>
 

@@ -39,6 +39,8 @@ Route::get('/horarios', [\App\Http\Controllers\Publico\HorarioControlador::class
 Route::get('/notificaciones', [\App\Http\Controllers\Publico\NotificacionControlador::class, 'index'])->name('notificaciones.index');
 Route::get('/notificaciones/{id}', [\App\Http\Controllers\Publico\NotificacionControlador::class, 'show'])->name('notificaciones.show');
 
+Route::get('/mapa/datos-vivo', [\App\Http\Controllers\Publico\MapaControlador::class, 'datosEnVivo'])->name('cliente.mapa.datos');
+
 
 /*
 |--------------------------------------------------------------------------
