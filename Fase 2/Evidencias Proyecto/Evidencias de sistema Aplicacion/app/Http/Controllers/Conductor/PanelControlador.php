@@ -93,15 +93,8 @@ class PanelControlador extends Controller
         return back()->with('error', 'No se pudo finalizar la ruta.');
     }
 
-    // Asegúrese de agregar este import en la parte superior del archivo si no está:
-    // use App\Events\UbicacionTransmitida;
-
     public function transmitirUbicacion(Request $request, $id)
     {
-        // AJUSTE CRÍTICO: Desactivamos el escudo SSL ANTES de cualquier conexión
-        // Esto garantiza que el motor de Reverb se inicialice con esta regla en Dokploy.
-        config(['broadcasting.connections.reverb.client_options.verify' => false]);
-
         try {
             $request->validate([
                 'lat' => 'required|numeric',
@@ -124,53 +117,19 @@ class PanelControlador extends Controller
                 return response()->json(['error' => 'Recorrido no válido o inactivo'], 403);
             }
 
-            // 2. Estrategia de optimización (Inteligencia de Negocios): 
-            // Guardamos en la base de datos solo si ha pasado más de 1 minuto
-            $ultimoRegistro = DB::table('ubicacion_vehiculos')
-                ->where('recorrido_id', $recorrido->recorrido_id)
-                ->orderBy('created_at', 'desc')
-                ->first();
+            // 2. Simplicidad Absoluta: Guardamos la coordenada directamente sin WebSockets
+            DB::table('ubicacion_vehiculos')->insert([
+                'recorrido_id' => $recorrido->recorrido_id,
+                'latitud' => $request->lat,
+                'longitud' => $request->lng,
+                'velocidad' => $request->velocidad ?? 0,
+                'created_at' => Carbon::now('America/Santiago'),
+                'updated_at' => Carbon::now('America/Santiago')
+            ]);
 
-            $guardarEnBD = false;
-
-            if (!$ultimoRegistro) {
-                $guardarEnBD = true;
-            } else {
-                $ultimaVez = Carbon::parse($ultimoRegistro->created_at);
-                if (Carbon::now('America/Santiago')->diffInSeconds($ultimaVez) >= 60) {
-                    $guardarEnBD = true;
-                }
-            }
-
-            if ($guardarEnBD) {
-                DB::table('ubicacion_vehiculos')->insert([
-                    'recorrido_id' => $recorrido->recorrido_id,
-                    'latitud' => $request->lat,
-                    'longitud' => $request->lng,
-                    'velocidad' => $request->velocidad ?? 0,
-                    'created_at' => Carbon::now('America/Santiago'),
-                    'updated_at' => Carbon::now('America/Santiago')
-                ]);
-            }
-
-            // 3. ÚNICA EMISIÓN AL WEBSOCKET: Usamos el helper nativo broadcast()
-            broadcast(new \App\Events\UbicacionTransmitida(
-                $recorrido->recorrido_id,
-                $recorrido->vehiculo_id,
-                $recorrido->patente,
-                $request->lat,
-                $request->lng,
-                $request->velocidad
-            ));
-
-            return response()->json(['status' => 'Ubicación transmitida y procesada correctamente']);
+            return response()->json(['status' => 'Ubicación transmitida y guardada en BD']);
         } catch (\Exception $e) {
-            return response()->json([
-                'error_detectado' => 'Falla en el servidor',
-                'mensaje_tecnico' => $e->getMessage(),
-                'archivo_responsable' => $e->getFile(),
-                'linea_de_codigo' => $e->getLine()
-            ], 500);
+            return response()->json(['error' => 'Falla en el servidor: ' . $e->getMessage()], 500);
         }
     }
 }

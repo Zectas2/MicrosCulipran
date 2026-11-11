@@ -104,27 +104,19 @@
             });
         }
 
-        // Conectar Radar de Reverb
-        setTimeout(() => {
-            console.log("🔍 Verificando motor Echo...");
-            if (typeof window.Echo !== 'undefined') {
-                console.log("✅ Motor Echo detectado. Conectando canal 'flota-vivo'...");
-
-                window.Echo.channel('flota-vivo')
-                    .listen('.PosicionActualizada', (evento) => {
-                        console.log("📡 EVENTO RECIBIDO:", evento);
-                        const lat = evento.lat || evento.latitud;
-                        const lng = evento.lng || evento.longitud;
-                        const vId = evento.vehiculoId || evento.vehiculo_id || evento.id;
-
-                        if (lat && lng && vId) {
-                            actualizarMicro(vId, evento.patente, lat, lng, evento.velocidad);
-                        }
-                    });
-            } else {
-                console.error("❌ window.Echo NO está definido.");
-            }
-        }, 1500);
+        // 2. Conectar radar mediante HTTP Polling (Simplicidad Absoluta)
+        setInterval(() => {
+            fetch('/admin/mapa/datos-vivo')
+                .then(response => response.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        data.forEach(micro => {
+                            actualizarMicro(micro.vehiculoId, micro.patente, micro.lat, micro.lng, micro.velocidad, micro.conductor);
+                        });
+                    }
+                })
+                .catch(error => console.error("⚠️ Error consultando el radar GPS:", error));
+        }, 5000);
     };
 </script>
 
