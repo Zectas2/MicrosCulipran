@@ -27,7 +27,7 @@ class TurnoControlador extends Controller
             'salidas'      => 'required|array'
         ]);
 
-        // 2. Obtener la ruta predeterminada (Asumiremos la primera ruta registrada para este módulo)
+        // 2. Obtener la ruta predeterminada
         $ruta = DB::table('rutas')->first();
 
         if (!$ruta) {
@@ -52,15 +52,16 @@ class TurnoControlador extends Controller
                 }
 
                 $inserciones[] = [
-                    'id'           => Str::uuid(),
-                    'ruta_id'      => $ruta->id,
-                    'vehiculo_id'  => $request->vehiculo_id,
-                    'conductor_id' => $request->conductor_id,
-                    // Se formatea a string para que la DB lo guarde tal cual sin reconversión
-                    'hora_salida'  => $fechaSalida->format('Y-m-d H:i:s'),
-                    'estado'       => 'programado',
-                    'created_at'   => now('America/Santiago')->format('Y-m-d H:i:s'),
-                    'updated_at'   => now('America/Santiago')->format('Y-m-d H:i:s'),
+                    'id'              => Str::uuid(),
+                    'ruta_id'         => $ruta->id,
+                    'vehiculo_id'     => $request->vehiculo_id,
+                    'conductor_id'    => $request->conductor_id,
+                    // LA ACTUALIZACIÓN CLAVE: Guardamos en hora_programada
+                    'hora_programada' => $fechaSalida->format('Y-m-d H:i:s'),
+                    'hora_salida'     => null, // Queda en nulo hasta que el chofer inicie la ruta
+                    'estado'          => 'programado',
+                    'created_at'      => now('America/Santiago')->format('Y-m-d H:i:s'),
+                    'updated_at'      => now('America/Santiago')->format('Y-m-d H:i:s'),
                 ];
             }
         }
@@ -81,15 +82,15 @@ class TurnoControlador extends Controller
             ->where('recorridos.estado', 'programado')
             ->select(
                 'recorridos.id',
-                'recorridos.hora_salida',
+                'recorridos.hora_programada', // Ahora leemos la hora programada
                 'vehiculos.patente',
                 'usuarios.nombre as conductor'
             )
-            ->orderBy('recorridos.hora_salida', 'asc')
+            ->orderBy('recorridos.hora_programada', 'asc') // Ordenamos por la hora programada
             ->get()
             ->map(function ($turno) {
                 // Formateamos la fecha para que sea legible en la vista
-                $fecha = Carbon::parse($turno->hora_salida);
+                $fecha = Carbon::parse($turno->hora_programada);
                 $turno->dia = $fecha->locale('es')->isoFormat('dddd D \d\e MMMM');
                 $turno->hora = $fecha->format('H:i');
                 return $turno;
