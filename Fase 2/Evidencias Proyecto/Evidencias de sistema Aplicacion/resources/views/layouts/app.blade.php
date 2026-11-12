@@ -13,15 +13,32 @@
 
 <body class="bg-fondo font-sans antialiased text-texto min-h-screen flex flex-col">
 
+    @php
+    // Variable central de control de acceso al menú corporativo
+    $accesoMenu = Auth::check() && in_array(Auth::user()->rol, ['administrador', 'conductor']);
+    @endphp
+
     <!-- Barra de Navegación Superior -->
     <header class="bg-primario text-secundario px-4 py-3 flex items-center justify-between relative shadow-md">
 
-        <!-- Botón Menú Lateral (Izquierda) -->
-        <button type="button" onclick="toggleMenu()" class="p-2 hover:bg-secundario/10 rounded-lg transition-colors">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-        </button>
+        <!-- Zona Izquierda (Menú Dinámico o Login) -->
+        <div class="w-12 flex justify-start">
+            @if($accesoMenu)
+            <!-- Botón Menú Lateral Exclusivo para Staff -->
+            <button type="button" onclick="toggleMenu()" class="p-2 hover:bg-secundario/10 rounded-lg transition-colors">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+            @elseif(Auth::guest())
+            <!-- Botón de Login Discreto para usuarios sin sesión -->
+            <a href="/login" class="p-2 hover:bg-secundario/10 rounded-lg transition-colors" title="Acceso Personal">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                </svg>
+            </a>
+            @endif
+        </div>
 
         <!-- Título Principal (Centro Absoluto) -->
         <a href="/" class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center text-center">
@@ -30,19 +47,21 @@
         </a>
 
         <!-- Campana de Notificaciones (Derecha) -->
-        <a href="{{ route('notificaciones.index') }}" class="relative p-2 hover:bg-secundario/10 rounded-full transition-colors">
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-            </svg>
+        <div class="w-12 flex justify-end">
+            <a href="{{ route('notificaciones.index') }}" class="relative p-2 hover:bg-secundario/10 rounded-full transition-colors">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
 
-            <!-- Indicador dinámico de notificaciones -->
-            @if(isset($tieneNotificacionesRecientes) && $tieneNotificacionesRecientes)
-            <span class="absolute top-1 right-2 flex h-3 w-3">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-peligro opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-peligro border-2 border-primario"></span>
-            </span>
-            @endif
-        </a>
+                <!-- Indicador dinámico de notificaciones -->
+                @if(isset($tieneNotificacionesRecientes) && $tieneNotificacionesRecientes)
+                <span class="absolute top-1 right-2 flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-peligro opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-peligro border-2 border-primario"></span>
+                </span>
+                @endif
+            </a>
+        </div>
     </header>
 
     <!-- Contenedor Principal Dinámico -->
@@ -57,7 +76,8 @@
         </div>
     </footer>
 
-    <!-- Menú Lateral (Off-Canvas) Dinámico -->
+    <!-- Bloque Condicionado: Menú Lateral y Scripts -->
+    @if($accesoMenu)
     <div id="sidebarOverlay" class="fixed inset-0 bg-texto/50 z-40 hidden transition-opacity backdrop-blur-sm" onclick="toggleMenu()"></div>
     <aside id="sidebarMenu" class="fixed top-0 left-0 w-72 h-full bg-secundario shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
 
@@ -71,13 +91,11 @@
         </div>
 
         <!-- Panel de Identificación del Usuario -->
-        @auth
         <div class="bg-fondo p-5 border-b border-gray-200 flex flex-col">
             <span class="text-[10px] font-bold text-texto/50 uppercase tracking-widest mb-1">Sesión Activa</span>
             <span class="font-black text-texto text-lg leading-tight">{{ Auth::user()->nombre }}</span>
             <span class="text-xs font-bold text-primario uppercase tracking-widest mt-0.5">{{ Auth::user()->rol }}</span>
         </div>
-        @endauth
 
         <div class="p-4 flex flex-col space-y-2 flex-grow overflow-y-auto">
 
@@ -92,7 +110,6 @@
                 Portal Pasajeros
             </a>
 
-            @auth
             <!-- Enlaces exclusivos para Conductores -->
             @if(Auth::user()->rol === 'conductor')
             <a href="/conductor" class="p-4 rounded-2xl font-bold transition-all flex items-center border 
@@ -118,27 +135,11 @@
                 Dashboard Administrativo
             </a>
             @endif
-            @endauth
-
-            <!-- Enlace para ingresar (Sólo si NO ha iniciado sesión) -->
-            @guest
-            <a href="/login" class="p-4 rounded-2xl font-bold transition-all flex items-center border 
-            {{ Request::is('login') 
-                ? 'text-primario bg-primario/10 border-primario/20' 
-                : 'text-texto hover:bg-fondo border-transparent hover:border-gray-100' }} mt-4">
-                <svg class="w-5 h-5 mr-3 {{ Request::is('login') ? 'text-primario' : 'text-texto/50' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                </svg>
-                Acceso Personal
-            </a>
-            @endguest
 
         </div>
 
-        <!-- Área Inferior: Cierre de Sesión o Branding -->
+        <!-- Área Inferior: Cierre de Sesión -->
         <div class="p-4 border-t border-gray-100 bg-fondo">
-            @auth
-            <!-- Formulario seguro para cerrar sesión -->
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="w-full p-4 rounded-2xl font-black text-peligro bg-peligro/10 hover:bg-peligro/20 active:scale-95 transition-all flex items-center justify-center border border-peligro/20">
@@ -148,9 +149,6 @@
                     CERRAR SESIÓN
                 </button>
             </form>
-            @else
-            <p class="text-[10px] text-texto/40 text-center font-black tracking-widest uppercase">Micros Culiprán v1.0</p>
-            @endauth
         </div>
     </aside>
 
@@ -168,6 +166,7 @@
             }
         }
     </script>
+    @endif
 
 </body>
 
