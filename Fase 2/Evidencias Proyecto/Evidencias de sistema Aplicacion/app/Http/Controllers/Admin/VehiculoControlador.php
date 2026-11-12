@@ -67,7 +67,7 @@ class VehiculoControlador extends Controller
         $request->validate([
             'estado'    => 'required|string',
             'marca'     => 'required|string|max:255',
-            'anio'      => 'required|integer|min:1990|max:' . (date('Y') + 1),
+            'anio'      => 'required|integer|min:2004|max:' . (date('Y') + 1),
             'capacidad' => 'required|integer|min:10',
         ]);
 
