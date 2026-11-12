@@ -4,9 +4,26 @@
 @section('content')
 
 @php
-// Extraemos la información del turno actual (el primero que esté programado o en ruta)
+// Extraemos la información del turno actual
 $turnoActual = $turnosHoy->whereIn('estado', ['programado', 'en_ruta'])->first();
 $vueltasTotales = $turnosHoy->count();
+
+// Motor de cálculo de atraso en tiempo real
+$estaAtrasado = false;
+$minutosAtraso = 0;
+
+if ($turnoActual && $turnoActual->estado === 'programado' && $turnoActual->hora_programada) {
+$ahora = \Carbon\Carbon::now('America/Santiago');
+$programada = \Carbon\Carbon::parse($turnoActual->hora_programada)->timezone('America/Santiago');
+
+// Si la diferencia es positiva, la hora actual superó a la hora programada
+$diferencia = $programada->diffInMinutes($ahora, false);
+
+if ($diferencia > 0) {
+$estaAtrasado = true;
+$minutosAtraso = round($diferencia);
+}
+}
 @endphp
 
 <div class="flex flex-col space-y-6 max-w-md mx-auto w-full pb-6">
@@ -27,7 +44,7 @@ $vueltasTotales = $turnosHoy->count();
 
     <!-- Tarjeta Interactiva de Información de Ruta Asignada -->
     @if($turnoActual)
-    <a href="/conductor/itinerario" class="block bg-secundario rounded-3xl shadow-sm border border-gray-200 p-5 active:scale-95 transition-transform relative hover:border-primario/50">
+    <a href="/conductor/itinerario" class="block bg-secundario rounded-3xl shadow-sm border {{ $estaAtrasado ? 'border-red-400' : 'border-gray-200' }} p-5 active:scale-95 transition-transform relative hover:border-primario/50">
         <!-- Ícono indicador de lista/expansión -->
         <div class="absolute top-4 right-4 bg-gray-100 p-1.5 rounded-lg text-texto/40">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,8 +62,8 @@ $vueltasTotales = $turnosHoy->count();
                 Turno Asignado
                 @endif
             </span>
-            <span class="text-xs font-bold text-acento">
-                {{ $turnoActual->estado === 'en_ruta' ? 'En Tránsito' : 'Pendiente' }}
+            <span class="text-xs font-bold {{ $estaAtrasado ? 'text-red-500 animate-pulse' : 'text-acento' }}">
+                {{ $turnoActual->estado === 'en_ruta' ? 'En Tránsito' : ($estaAtrasado ? 'ATRASADO' : 'Pendiente') }}
             </span>
         </div>
 
@@ -59,15 +76,29 @@ $vueltasTotales = $turnosHoy->count();
             </div>
             <div class="text-right">
                 <p class="text-[10px] uppercase font-bold text-texto/50">Hora Programada</p>
-                <!-- CORRECCIÓN: Leemos hora_programada en lugar de hora_salida -->
-                <p class="font-bold">{{ \Carbon\Carbon::parse($turnoActual->hora_programada)->format('H:i') }} hrs</p>
+                <p class="font-bold {{ $estaAtrasado ? 'text-red-600' : '' }}">{{ \Carbon\Carbon::parse($turnoActual->hora_programada)->format('H:i') }} hrs</p>
             </div>
         </div>
 
-        <!-- Indicador visual de más contenido -->
-        <div class="mt-4 bg-fondo rounded-xl p-2 text-center border border-gray-100 flex justify-center items-center">
-            <span class="text-[10px] font-bold text-texto/60 uppercase tracking-widest">Tocar para ver itinerario completo ({{ $vueltasTotales }} Vueltas)</span>
+        <!-- ALERTA DE ATRASO DINÁMICA -->
+        @if($estaAtrasado)
+        <div class="mt-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between animate-pulse shadow-sm">
+            <div class="flex items-center">
+                <div class="bg-red-100 p-2 rounded-lg mr-3">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs font-black text-red-800 uppercase tracking-wider">Retraso de Salida</span>
+            </div>
+            <span class="text-xl font-black text-red-600">-{{ $minutosAtraso }} min</span>
         </div>
+        @else
+        <!-- Indicador visual de más contenido normal -->
+        <div class="mt-4 bg-fondo rounded-xl p-2 text-center border border-gray-100 flex justify-center items-center">
+            <span class="text-[10px] font-bold text-texto/60 uppercase tracking-widest">Tocar para ver itinerario ({{ $vueltasTotales }} Vueltas)</span>
+        </div>
+        @endif
     </a>
     @else
     <!-- Tarjeta de Jornada Finalizada / Sin Turnos -->
@@ -82,7 +113,6 @@ $vueltasTotales = $turnosHoy->count();
     </div>
     @endif
 
-
     <!-- Bloque de Botones Operativos -->
     <div class="flex flex-col space-y-4">
 
@@ -90,12 +120,12 @@ $vueltasTotales = $turnosHoy->count();
         @if($turnoActual && $turnoActual->estado === 'programado')
         <form action="{{ route('conductor.iniciar', $turnoActual->id) }}" method="POST">
             @csrf
-            <button type="submit" class="w-full bg-acento text-secundario text-xl font-black py-6 rounded-3xl shadow-md active:scale-95 transition-transform flex items-center justify-center space-x-3">
+            <button type="submit" class="w-full {{ $estaAtrasado ? 'bg-red-600 hover:bg-red-700' : 'bg-acento hover:bg-acento/90' }} text-secundario text-xl font-black py-6 rounded-3xl shadow-md active:scale-95 transition-all flex items-center justify-center space-x-3">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span>INICIAR RUTA</span>
+                <span>{{ $estaAtrasado ? 'INICIAR RUTA URGENTE' : 'INICIAR RUTA' }}</span>
             </button>
         </form>
         @elseif(!$turnoActual)
