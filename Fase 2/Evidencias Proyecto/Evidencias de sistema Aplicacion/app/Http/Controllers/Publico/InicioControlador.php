@@ -14,15 +14,17 @@ class InicioControlador extends Controller
         $ahora = Carbon::now('America/Santiago');
         $hoy = $ahora->toDateString();
 
-        $recorridosPendientes = Recorrido::where('estado', '!=', 'finalizado')
-            ->where('estado', '!=', 'en_ruta')
-            ->orderBy('hora_salida', 'asc')
+        // 1. Buscamos estrictamente turnos 'programado' y que tengan fecha válida
+        $recorridosPendientes = Recorrido::where('estado', 'programado')
+            ->whereNotNull('hora_programada')
+            ->orderBy('hora_programada', 'asc')
             ->get();
 
         $limiteTolerancia = $ahora->copy()->subMinutes(20);
 
+        // 2. Extraer el próximo recorrido usando la hora_programada
         $proximaMicro = $recorridosPendientes->first(function ($recorrido) use ($limiteTolerancia) {
-            $horaConvertida = Carbon::parse($recorrido->hora_salida)->setTimezone('America/Santiago');
+            $horaConvertida = Carbon::parse($recorrido->hora_programada)->setTimezone('America/Santiago');
             return $horaConvertida->greaterThan($limiteTolerancia);
         });
 
@@ -32,14 +34,14 @@ class InicioControlador extends Controller
 
         if ($proximaMicro) {
             $estadoGeneral = 'Operativo';
-            $horaSalidaReal = Carbon::parse($proximaMicro->hora_salida)->setTimezone('America/Santiago');
+            $horaProgramadaReal = Carbon::parse($proximaMicro->hora_programada)->setTimezone('America/Santiago');
 
-            // Aplicamos un redondeo matemático estricto para eliminar los decimales
-            $minutosFaltantes = (int) round($ahora->diffInMinutes($horaSalidaReal, false));
+            // Redondeo estricto
+            $minutosFaltantes = (int) round($ahora->diffInMinutes($horaProgramadaReal, false));
 
-            if ($horaSalidaReal->isSameDay($ahora)) {
+            if ($horaProgramadaReal->isSameDay($ahora)) {
                 if ($minutosFaltantes > 60) {
-                    $tiempoRestante = "A las " . $horaSalidaReal->format('H:i') . " hrs";
+                    $tiempoRestante = "A las " . $horaProgramadaReal->format('H:i') . " hrs";
                 } elseif ($minutosFaltantes <= 0) {
                     $tiempoRestante = 'Saliendo...';
                 } else {
@@ -47,16 +49,18 @@ class InicioControlador extends Controller
                 }
             } else {
                 $etiquetaSuperior = 'Siguiente Jornada';
-                if ($horaSalidaReal->isTomorrow()) {
-                    $tiempoRestante = "Mañana, " . $horaSalidaReal->format('H:i') . " hrs";
+                if ($horaProgramadaReal->isTomorrow()) {
+                    $tiempoRestante = "Mañana, " . $horaProgramadaReal->format('H:i') . " hrs";
                 } else {
-                    $dia = ucfirst($horaSalidaReal->translatedFormat('l'));
-                    $tiempoRestante = "{$dia}, " . $horaSalidaReal->format('H:i') . " hrs";
+                    $dia = ucfirst($horaProgramadaReal->translatedFormat('l'));
+                    $tiempoRestante = "{$dia}, " . $horaProgramadaReal->format('H:i') . " hrs";
                 }
             }
         } else {
+            // Verificar si hay micros operando AHORA
             $microsEnRuta = Recorrido::where('estado', 'en_ruta')->get()->contains(function ($r) use ($hoy) {
-                return Carbon::parse($r->hora_salida)->setTimezone('America/Santiago')->toDateString() === $hoy;
+                if (!$r->hora_programada) return false;
+                return Carbon::parse($r->hora_programada)->setTimezone('America/Santiago')->toDateString() === $hoy;
             });
 
             if ($microsEnRuta) {
