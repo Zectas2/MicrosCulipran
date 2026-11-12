@@ -59,7 +59,8 @@ $vueltasTotales = $turnosHoy->count();
             </div>
             <div class="text-right">
                 <p class="text-[10px] uppercase font-bold text-texto/50">Hora Programada</p>
-                <p class="font-bold">{{ \Carbon\Carbon::parse($turnoActual->hora_salida)->format('H:i') }} hrs</p>
+                <!-- CORRECCIÓN: Leemos hora_programada en lugar de hora_salida -->
+                <p class="font-bold">{{ \Carbon\Carbon::parse($turnoActual->hora_programada)->format('H:i') }} hrs</p>
             </div>
         </div>
 
