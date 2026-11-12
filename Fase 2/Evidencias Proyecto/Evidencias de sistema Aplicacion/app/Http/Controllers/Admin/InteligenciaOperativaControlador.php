@@ -23,8 +23,38 @@ class InteligenciaOperativaControlador extends Controller
 
         $vueltasCompletadas = $recorridosFinalizados->count();
 
-        // 2. KPI: Puntualidad (Requiere columna 'hora_programada' en el futuro)
-        $puntualidad = 100;
+        // 2. KPI: Puntualidad Real y Excepciones de Horario
+        $totalSalidas = $recorridosFinalizados->count();
+        $excepcionesHorario = collect(); // Colección para rastrear a los infractores
+
+        $salidasA_tiempo = $recorridosFinalizados->filter(function ($r) use (&$excepcionesHorario) {
+            if (!$r->hora_programada || !$r->hora_salida) return false;
+
+            $programada = Carbon::parse($r->hora_programada);
+            $salidaReal = Carbon::parse($r->hora_salida);
+
+            // Calculamos la diferencia (Positivo = salió tarde, Negativo = salió temprano)
+            $minutosDiferencia = $programada->diffInMinutes($salidaReal, false);
+
+            // Ventana estricta: -2 minutos (anticipación máxima) a +8 minutos (espera máxima)
+            if ($minutosDiferencia >= -2 && $minutosDiferencia <= 8) {
+                return true;
+            } else {
+                // Atrapamos al infractor para el reporte
+                $estadoPuntualidad = $minutosDiferencia > 8 ? 'Atrasado' : 'Adelantado';
+                $excepcionesHorario->push((object)[
+                    'patente' => $r->vehiculo->patente ?? 'S/P',
+                    'conductor' => $r->conductor->nombre ?? 'Desconocido',
+                    'programada' => $programada->format('H:i'),
+                    'salida_real' => $salidaReal->format('H:i'),
+                    'diferencia_minutos' => abs($minutosDiferencia),
+                    'estado' => $estadoPuntualidad
+                ]);
+                return false;
+            }
+        })->count();
+
+        $puntualidad = $totalSalidas > 0 ? round(($salidasA_tiempo / $totalSalidas) * 100) : 100;
 
         // 3. KPI: Velocidad Promedio Diaria
         $velocidadPromedio = DB::table('ubicacion_vehiculos')
