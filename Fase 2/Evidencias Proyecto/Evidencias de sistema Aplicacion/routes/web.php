@@ -67,7 +67,7 @@ Route::middleware(['rol:administrador'])->prefix('admin')->group(function () {
     // Panel General, Mapa de Administración y BI
     Route::get('/', [PanelAdministracionControlador::class, 'index'])->name('admin.index');
     Route::get('/mapa', [\App\Http\Controllers\Admin\MapaAdminControlador::class, 'index'])->name('admin.mapa');
-   
+
 
     // Gestión de Choferes
     Route::get('/choferes', [ChoferControlador::class, 'index'])->name('admin.choferes.index');
@@ -103,9 +103,6 @@ Route::middleware(['rol:administrador'])->prefix('admin')->group(function () {
     Route::get('/bi', [\App\Http\Controllers\Admin\InteligenciaOperativaControlador::class, 'index'])->name('admin.inteligencia');
 
     Route::put('/editar-micro/{id}', [\App\Http\Controllers\Admin\VehiculoControlador::class, 'update'])->name('admin.micros.update');
-
-    // Itinerario
-    Route::get('/itinerario', [PanelControlador::class, 'itinerario'])->name('conductor.itinerario');
 });
 
 
@@ -124,9 +121,7 @@ Route::middleware(['rol:conductor'])->prefix('conductor')->group(function () {
     Route::post('/finalizar-ruta/{id}', [PanelControlador::class, 'finalizarRuta'])->name('conductor.finalizar');
 
     // Itinerario
-    Route::get('/itinerario', function () {
-        return view('conductor.itinerario');
-    });
+    Route::get('/itinerario', [PanelControlador::class, 'itinerario'])->name('conductor.itinerario');
 
     // Transmisión de telemetría de alta frecuencia
     Route::post('/telemetria/{id}', [PanelControlador::class, 'transmitirUbicacion'])->name('conductor.telemetria');
