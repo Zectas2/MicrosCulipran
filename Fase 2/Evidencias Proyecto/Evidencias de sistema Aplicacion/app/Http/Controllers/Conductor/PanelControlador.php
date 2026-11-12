@@ -148,7 +148,9 @@ class PanelControlador extends Controller
             ->orderBy('recorridos.hora_programada', 'asc')
             ->get();
 
-        $maquinaHoy = $turnosHoy->first()->patente ?? 'Sin Asignar';
+        // VALIDACIÓN SEGURA: Comprobamos si existe un primer turno antes de pedir la patente
+        $primerTurno = $turnosHoy->first();
+        $maquinaHoy = $primerTurno ? $primerTurno->patente : 'Sin Asignar';
 
         // 2. Extraer turnos futuros y agruparlos por día
         $futuros = DB::table('recorridos')
