@@ -17,7 +17,7 @@
     </div>
 
     <!-- KPIs de Rendimiento Global -->
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-3 gap-4">
         <div class="bg-secundario p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
             <span class="text-texto/50 text-[10px] font-bold uppercase tracking-wider mb-1">Puntualidad de Salidas</span>
             <div class="flex items-baseline space-x-1">
@@ -31,6 +31,14 @@
                 <span class="text-3xl font-black text-primario">{{ $vueltasCompletadas }}</span>
             </div>
             <span class="text-texto/60 text-xs font-bold mt-1">Total flota en el día</span>
+        </div>
+        <div class="bg-secundario p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
+            <span class="text-texto/50 text-[10px] font-bold uppercase tracking-wider mb-1">Ritmo de Flota</span>
+            <div class="flex items-baseline space-x-1">
+                <span class="text-3xl font-black text-blue-500">{{ $velocidadPromedio }}</span>
+                <span class="text-sm font-bold text-texto/50">km/h</span>
+            </div>
+            <span class="text-texto/60 text-xs font-bold mt-1">Velocidad promedio general</span>
         </div>
     </div>
 
@@ -80,39 +88,71 @@
         </div>
     </div>
 
-    <!-- Panel de Control: Mantenimiento de Máquinas -->
-    <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-texto text-sm">Estado de las Máquinas</h3>
-            <span class="bg-texto/5 text-texto/60 px-2 py-1 rounded-md text-[10px] font-bold uppercase">Mantenimiento</span>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Panel de Mantenimiento -->
+        <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-texto text-sm">Estado de las Máquinas</h3>
+                <span class="bg-texto/5 text-texto/60 px-2 py-1 rounded-md text-[10px] font-bold uppercase">Mantenimiento</span>
+            </div>
+            <div class="space-y-3">
+                @forelse($maquinasMantenimiento as $maquina)
+                <div class="flex items-center justify-between p-3 border border-primario/30 rounded-xl bg-primario/5">
+                    <div class="flex items-center">
+                        <div class="bg-primario/10 p-2 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-primario" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-black text-texto text-sm">{{ $maquina->patente }}</p>
+                            <p class="text-[10px] text-texto/60 font-bold uppercase">{{ str_replace('_', ' ', $maquina->estado) }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-texto/50 font-bold uppercase">Ingreso</p>
+                        <p class="text-xs font-black text-primario mt-0.5">{{ \Carbon\Carbon::parse($maquina->updated_at)->format('d/m H:i') }}</p>
+                    </div>
+                </div>
+                @empty
+                <div class="text-center py-4">
+                    <p class="text-sm font-bold text-texto/50">Toda la flota se encuentra operativa, Señor.</p>
+                </div>
+                @endforelse
+            </div>
         </div>
 
-        <div class="space-y-3">
-            @forelse($maquinasMantenimiento as $maquina)
-            <div class="flex items-center justify-between p-3 border border-primario/30 rounded-xl bg-primario/5">
-                <div class="flex items-center">
-                    <div class="bg-primario/10 p-2 rounded-lg mr-3">
-                        <svg class="w-5 h-5 text-primario" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
+        <!-- Panel de Alertas Críticas -->
+        <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-texto text-sm">Alertas de Seguridad</h3>
+                <span class="bg-red-500/10 text-red-600 px-2 py-1 rounded-md text-[10px] font-bold uppercase">> 80 km/h</span>
+            </div>
+            <div class="space-y-3">
+                @forelse($alertasVelocidad as $alerta)
+                <div class="flex items-center justify-between p-3 border border-red-500/30 rounded-xl bg-red-500/5">
+                    <div class="flex items-center">
+                        <div class="bg-red-500/10 p-2 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-black text-texto text-sm">{{ $alerta->patente }}</p>
+                            <p class="text-[10px] text-texto/60 font-bold">{{ $alerta->conductor }}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="font-black text-texto text-sm">{{ $maquina->patente }}</p>
-                        <p class="text-[10px] text-texto/60 font-bold uppercase">
-                            {{ str_replace('_', ' ', $maquina->estado) }}
-                        </p>
+                    <div class="text-right">
+                        <p class="text-[10px] text-texto/50 font-bold uppercase">{{ \Carbon\Carbon::parse($alerta->created_at)->format('H:i') }}</p>
+                        <p class="text-xs font-black text-red-600 mt-0.5">{{ $alerta->velocidad }} km/h</p>
                     </div>
                 </div>
-                <div class="text-right">
-                    <p class="text-[10px] text-texto/50 font-bold uppercase">Ingreso</p>
-                    <p class="text-xs font-black text-primario mt-0.5">{{ \Carbon\Carbon::parse($maquina->updated_at)->format('d/m H:i') }}</p>
+                @empty
+                <div class="text-center py-4">
+                    <p class="text-sm font-bold text-texto/50">Ninguna infracción registrada hoy.</p>
                 </div>
+                @endforelse
             </div>
-            @empty
-            <div class="text-center py-4">
-                <p class="text-sm font-bold text-texto/50">Toda la flota se encuentra operativa, Señor.</p>
-            </div>
-            @endforelse
         </div>
     </div>
 </div>
