@@ -136,11 +136,11 @@ class PanelControlador extends Controller
 
     public function itinerario()
     {
-        $hoy = Carbon::today('America/Santiago');
-        $conductorId = Auth::id();
+        $hoy = \Carbon\Carbon::today('America/Santiago');
+        $conductorId = \Illuminate\Support\Facades\Auth::id();
 
         // 1. Extraer los turnos de hoy
-        $turnosHoy = DB::table('recorridos')
+        $turnosHoy = \Illuminate\Support\Facades\DB::table('recorridos')
             ->leftJoin('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
             ->where('recorridos.conductor_id', $conductorId)
             ->whereDate('recorridos.hora_programada', $hoy)
@@ -148,12 +148,12 @@ class PanelControlador extends Controller
             ->orderBy('recorridos.hora_programada', 'asc')
             ->get();
 
-        // VALIDACIÓN SEGURA: Comprobamos si existe un primer turno antes de pedir la patente
+        // Validación segura para extraer la patente actual
         $primerTurno = $turnosHoy->first();
         $maquinaHoy = $primerTurno ? $primerTurno->patente : 'Sin Asignar';
 
         // 2. Extraer turnos futuros y agruparlos por día
-        $futuros = DB::table('recorridos')
+        $futuros = \Illuminate\Support\Facades\DB::table('recorridos')
             ->leftJoin('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
             ->where('recorridos.conductor_id', $conductorId)
             ->whereDate('recorridos.hora_programada', '>', $hoy)
@@ -163,16 +163,22 @@ class PanelControlador extends Controller
 
         $turnosFuturos = [];
         foreach ($futuros as $turno) {
-            $fecha = Carbon::parse($turno->hora_programada)->timezone('America/Santiago')->locale('es');
+            // Protección: Si el turno no tiene hora programada, lo saltamos para evitar Error 500
+            if (empty($turno->hora_programada)) {
+                continue;
+            }
+
+            $fecha = \Carbon\Carbon::parse($turno->hora_programada)->timezone('America/Santiago');
             $fechaStr = $fecha->format('Y-m-d');
 
             if (!isset($turnosFuturos[$fechaStr])) {
                 $turnosFuturos[$fechaStr] = (object)[
-                    'dia_semana' => substr($fecha->dayName, 0, 3), // lun, mar, mie...
+                    // CORRECCIÓN UTF-8: mb_substr evita el corte corrupto de caracteres con tilde
+                    'dia_semana' => mb_substr($fecha->locale('es')->dayName, 0, 3, 'UTF-8'),
                     'dia_numero' => $fecha->format('d'),
-                    'vueltas' => 0,
-                    'horarios' => [],
-                    'patente' => $turno->patente ?? 'S/A'
+                    'vueltas'    => 0,
+                    'horarios'   => [],
+                    'patente'    => $turno->patente ?? 'S/A'
                 ];
             }
             $turnosFuturos[$fechaStr]->vueltas++;
