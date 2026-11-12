@@ -25,9 +25,7 @@ use App\Http\Controllers\Conductor\PanelControlador;
 
 // Vistas estáticas
 Route::get('/', [\App\Http\Controllers\Publico\InicioControlador::class, 'index'])->name('inicio');
-Route::get('/tiempos', function () {
-    return view('cliente.tiempos');
-});
+Route::get('/tiempos', [\App\Http\Controllers\Publico\TiemposControlador::class, 'index'])->name('tiempos.index');
 
 // Vistas dinámicas usando Rutas Absolutas (Blindaje contra errores de importación)
 Route::get('/tarifas', [\App\Http\Controllers\Publico\TarifaControlador::class, 'index'])->name('tarifas.index');
