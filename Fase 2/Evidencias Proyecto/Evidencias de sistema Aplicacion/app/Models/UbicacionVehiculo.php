@@ -10,8 +10,8 @@ class UbicacionVehiculo extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $table = 'ubicaciones_vehiculos';
-    public $timestamps = false; 
+    protected $table = 'ubicacion_vehiculos'; 
+    public $timestamps = false;
 
     protected $fillable = [
         'recorrido_id',

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Recorrido;
+use App\Models\Vehiculo;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -12,57 +14,52 @@ class InteligenciaOperativaControlador extends Controller
     {
         $hoy = Carbon::today('America/Santiago');
 
-        // 1. KPIs Globales
-        $vueltasCompletadas = DB::table('recorridos')
+        // 1. Cargar recorridos finalizados HOY usando los Modelos Eloquent
+        // Usamos whereDate en 'updated_at' porque es el momento exacto en que se finalizó la ruta
+        $recorridosFinalizados = Recorrido::with(['conductor', 'vehiculo'])
             ->where('estado', 'finalizado')
-            ->whereDate('hora_salida', $hoy)
-            ->count();
+            ->whereDate('updated_at', $hoy)
+            ->get();
 
-        $puntualidad = 100; // Temporalmente fijo
+        $vueltasCompletadas = $recorridosFinalizados->count();
 
-        // NUEVO KPI: Velocidad Promedio Diaria de la Flota
+        // 2. KPI: Puntualidad (Requiere columna 'hora_programada' en el futuro)
+        $puntualidad = 100;
+
+        // 3. KPI: Velocidad Promedio Diaria
         $velocidadPromedio = DB::table('ubicacion_vehiculos')
             ->whereDate('created_at', $hoy)
             ->avg('velocidad');
         $velocidadPromedio = round($velocidadPromedio ?? 0);
 
-        // 2. Gráfico 1: Productividad
-        $productividad = DB::table('recorridos')
-            ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
-            ->where('recorridos.estado', 'finalizado')
-            ->whereDate('recorridos.hora_salida', $hoy)
-            ->select('usuarios.nombre', DB::raw('count(recorridos.id) as total_vueltas'))
-            ->groupBy('usuarios.id', 'usuarios.nombre')
-            ->orderByDesc('total_vueltas')
-            ->get();
+        // 4. Gráfico 1: Productividad (Matemática pura con Colecciones Eloquent)
+        $productividad = $recorridosFinalizados->groupBy(function ($recorrido) {
+            return $recorrido->conductor->nombre ?? 'Desconocido';
+        })->map(function ($viajes) {
+            return $viajes->count();
+        })->sortDesc();
 
-        $labelsProductividad = $productividad->pluck('nombre')->toArray();
-        $datosProductividad = $productividad->pluck('total_vueltas')->toArray();
+        $labelsProductividad = $productividad->keys()->toArray();
+        $datosProductividad = $productividad->values()->toArray();
 
-        // 3. Gráfico 2: Eficiencia (Minutos)
-        $eficiencia = DB::table('recorridos')
-            ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
-            ->where('recorridos.estado', 'finalizado')
-            ->whereDate('recorridos.hora_salida', $hoy)
-            ->select(
-                'vehiculos.patente',
-                DB::raw('AVG(EXTRACT(EPOCH FROM (recorridos.updated_at - recorridos.hora_salida))/60) as minutos_promedio')
-            )
-            ->groupBy('vehiculos.id', 'vehiculos.patente')
-            ->get();
+        // 5. Gráfico 2: Eficiencia (Cálculo de minutos exactos usando Carbon)
+        $eficiencia = $recorridosFinalizados->groupBy(function ($recorrido) {
+            return $recorrido->vehiculo->patente ?? 'Sin Patente';
+        })->map(function ($viajes) {
+            return $viajes->avg(function ($recorrido) {
+                $salida = Carbon::parse($recorrido->hora_salida);
+                $llegada = Carbon::parse($recorrido->updated_at); // El updated_at es nuestra llegada
+                return $salida->diffInMinutes($llegada);
+            });
+        });
 
-        $labelsEficiencia = $eficiencia->pluck('patente')->toArray();
-        $datosEficiencia = $eficiencia->pluck('minutos_promedio')->map(function ($val) {
-            return round($val, 1);
-        })->toArray();
+        $labelsEficiencia = $eficiencia->keys()->toArray();
+        $datosEficiencia = $eficiencia->values()->map(fn($v) => round($v, 1))->toArray();
 
-        // 4. Panel de Mantenimiento
-        $maquinasMantenimiento = DB::table('vehiculos')
-            ->where('estado', 'en_mantencion')
-            ->select('patente', 'estado', 'updated_at')
-            ->get();
+        // 6. Panel de Mantenimiento usando Modelo Vehiculo
+        $maquinasMantenimiento = Vehiculo::where('estado', 'en_mantencion')->get();
 
-        // NUEVO PANEL: Alertas de Exceso de Velocidad (> 80 km/h)
+        // 7. Alertas de Exceso de Velocidad (> 80 km/h)
         $alertasVelocidad = DB::table('ubicacion_vehiculos')
             ->join('recorridos', 'ubicacion_vehiculos.recorrido_id', '=', 'recorridos.id')
             ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')

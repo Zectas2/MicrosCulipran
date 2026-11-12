@@ -116,7 +116,7 @@
                 </div>
                 @empty
                 <div class="text-center py-4">
-                    <p class="text-sm font-bold text-texto/50">Toda la flota se encuentra operativa, Señor.</p>
+                    <p class="text-sm font-bold text-texto/50">Toda la flota se encuentra operativa.</p>
                 </div>
                 @endforelse
             </div>
@@ -164,27 +164,11 @@
         Chart.defaults.font.family = "'Instrument Sans', sans-serif";
         Chart.defaults.color = '#3f3f46';
 
-        // Sintaxis correcta y segura para inyectar JSON desde Laravel a JavaScript
-        const etiquetasChoferes = {
-            {
-                Illuminate\ Support\ Js::from($labelsProductividad ?? [])
-            }
-        };
-        const datosVueltas = {
-            {
-                Illuminate\ Support\ Js::from($datosProductividad ?? [])
-            }
-        };
-        const etiquetasEficiencia = {
-            {
-                Illuminate\ Support\ Js::from($labelsEficiencia ?? [])
-            }
-        };
-        const datosMinutos = {
-            {
-                Illuminate\ Support\ Js::from($datosEficiencia ?? [])
-            }
-        };
+        // Sintaxis nativa y blindada para inyectar JSON en Blade
+        const etiquetasChoferes = @json($labelsProductividad ?? []);
+        const datosVueltas = @json($datosProductividad ?? []);
+        const etiquetasEficiencia = @json($labelsEficiencia ?? []);
+        const datosMinutos = @json($datosEficiencia ?? []);
         // Gráfico 1: Productividad
         if (document.getElementById('productividadChart')) {
             new Chart(document.getElementById('productividadChart').getContext('2d'), {

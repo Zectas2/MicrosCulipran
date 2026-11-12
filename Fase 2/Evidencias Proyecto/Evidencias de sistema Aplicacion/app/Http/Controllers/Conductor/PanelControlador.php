@@ -15,22 +15,22 @@ class PanelControlador extends Controller
         $hoy = Carbon::today('America/Santiago');
         $conductorId = Auth::id(); // Obtenemos el ID del conductor que inició sesión
 
-        // Buscamos solo los recorridos de hoy asignados a este conductor
+        // Buscamos solo los recorridos de hoy asignados a este conductor usando la hora PROGRAMADA
         $turnosHoy = DB::table('recorridos')
             ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
             ->where('recorridos.conductor_id', $conductorId)
-            ->whereDate('recorridos.hora_salida', $hoy)
+            ->whereDate('recorridos.hora_programada', $hoy)
             ->select(
                 'recorridos.id',
-                'recorridos.hora_salida',
+                'recorridos.hora_programada',
                 'recorridos.estado',
                 'vehiculos.patente'
             )
-            ->orderBy('recorridos.hora_salida', 'asc')
+            ->orderBy('recorridos.hora_programada', 'asc')
             ->get()
             ->map(function ($turno) {
-                // Formateamos la hora para la interfaz
-                $turno->horaFormateada = Carbon::parse($turno->hora_salida)->timezone('America/Santiago')->format('H:i');
+                // Formateamos la hora programada para la interfaz
+                $turno->horaFormateada = Carbon::parse($turno->hora_programada)->timezone('America/Santiago')->format('H:i');
                 return $turno;
             });
 
@@ -39,7 +39,8 @@ class PanelControlador extends Controller
 
     public function iniciarRuta(Request $request, $id)
     {
-        // Actualizamos el estado y marcamos el segundo exacto en que inició la marcha
+        // Actualizamos el estado y marcamos el segundo exacto en que inició la marcha en 'hora_salida'.
+        // La columna 'hora_programada' permanece intacta para calcular la puntualidad en Inteligencia Operativa.
         DB::table('recorridos')
             ->where('id', $id)
             ->where('conductor_id', Auth::id()) // Medida de seguridad adicional

@@ -16,6 +16,7 @@ class Recorrido extends Model
         'ruta_id',
         'vehiculo_id',
         'conductor_id',
+        'hora_programada',
         'hora_salida',
         'estado',
     ];
@@ -23,6 +24,7 @@ class Recorrido extends Model
     protected function casts(): array
     {
         return [
+            'hora_programada' => 'datetime',
             'hora_salida' => 'datetime',
         ];
     }
