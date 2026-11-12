@@ -101,6 +101,8 @@ Route::middleware(['rol:administrador'])->prefix('admin')->group(function () {
     Route::get('/mapa/datos-vivo', [\App\Http\Controllers\Admin\MapaAdminControlador::class, 'datosEnVivo'])->name('admin.mapa.datos');
 
     Route::get('/bi', [\App\Http\Controllers\Admin\InteligenciaOperativaControlador::class, 'index'])->name('admin.inteligencia');
+
+    Route::put('/editar-micro/{id}', [\App\Http\Controllers\Admin\VehiculoControlador::class, 'update'])->name('admin.micros.update');
 });
 
 

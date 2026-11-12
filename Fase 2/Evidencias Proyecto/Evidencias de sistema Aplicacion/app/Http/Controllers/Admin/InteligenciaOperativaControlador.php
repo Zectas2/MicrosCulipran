@@ -47,7 +47,7 @@ class InteligenciaOperativaControlador extends Controller
                     'conductor' => $r->conductor->nombre ?? 'Desconocido',
                     'programada' => $programada->format('H:i'),
                     'salida_real' => $salidaReal->format('H:i'),
-                    'diferencia_minutos' => abs($minutosDiferencia),
+                    'diferencia_minutos' => round(abs($minutosDiferencia)), // <-- Aplicamos round aquí
                     'estado' => $estadoPuntualidad
                 ]);
                 return false;

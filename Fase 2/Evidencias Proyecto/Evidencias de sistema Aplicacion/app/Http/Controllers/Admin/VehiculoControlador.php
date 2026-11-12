@@ -4,31 +4,26 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use App\Models\Vehiculo; // Importamos el modelo Eloquent
 
 class VehiculoControlador extends Controller
 {
     public function index()
     {
-        // Obtenemos toda la flota ordenada por patente
-        $vehiculos = DB::table('vehiculos')->orderBy('patente', 'asc')->get();
+        // Eloquent: Obtenemos toda la flota ordenada por patente
+        $vehiculos = Vehiculo::orderBy('patente', 'asc')->get();
         return view('admin.micros', compact('vehiculos'));
     }
 
     public function cambiarEstado(Request $request, $id)
     {
-        // Validamos y actualizamos el estado de la máquina
         $request->validate([
             'estado' => 'required|string|in:operativo,en_mantencion,fuera_de_servicio'
         ]);
 
-        DB::table('vehiculos')
-            ->where('id', $id)
-            ->update([
-                'estado' => $request->estado,
-                'updated_at' => Carbon::now('America/Santiago')
-            ]);
+        // Eloquent actualiza automáticamente el campo 'updated_at'
+        $vehiculo = Vehiculo::findOrFail($id);
+        $vehiculo->update(['estado' => $request->estado]);
 
         return back()->with('exito', 'El estado de la máquina ha sido actualizado correctamente.');
     }
@@ -47,14 +42,13 @@ class VehiculoControlador extends Controller
             'capacidad' => 'required|integer',
         ]);
 
-        DB::table('vehiculos')->insert([
-            'patente'    => strtoupper($request->patente),
-            'marca'      => $request->marca, // Usaremos el campo 'marca' para Marca/Modelo
-            'anio'       => $request->anio,
-            'capacidad'  => $request->capacidad,
-            'estado'     => 'operativo', // Por defecto, una micro nueva está operativa
-            'created_at' => Carbon::now('America/Santiago'),
-            'updated_at' => Carbon::now('America/Santiago'),
+        // Eloquent: create() dispara la generación del UUID y las fechas (timestamps) automáticamente
+        Vehiculo::create([
+            'patente'   => strtoupper($request->patente),
+            'marca'     => $request->marca,
+            'anio'      => $request->anio,
+            'capacidad' => $request->capacidad,
+            'estado'    => 'operativo',
         ]);
 
         return redirect()->route('admin.micros.index')
@@ -63,35 +57,28 @@ class VehiculoControlador extends Controller
 
     public function edit($id)
     {
-        $vehiculo = DB::table('vehiculos')->where('id', $id)->first();
-
-        if (!$vehiculo) {
-            return redirect()->route('admin.micros.index')->with('error', 'El vehículo solicitado no existe.');
-        }
-
+        // Eloquent: fail() arroja un error 404 automático si el ID no existe
+        $vehiculo = Vehiculo::findOrFail($id);
         return view('admin.editar-micro', compact('vehiculo'));
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
+            'estado'    => 'required|string',
             'marca'     => 'required|string|max:255',
-            'anio'      => 'required|integer',
-            'capacidad' => 'required|integer',
-            'estado'    => 'required|string|in:operativo,en_mantencion,fuera_de_servicio',
+            'anio'      => 'required|integer|min:1990|max:' . (date('Y') + 1),
+            'capacidad' => 'required|integer|min:10',
         ]);
 
-        DB::table('vehiculos')
-            ->where('id', $id)
-            ->update([
-                'marca'      => $request->marca,
-                'anio'       => $request->anio,
-                'capacidad'  => $request->capacidad,
-                'estado'     => $request->estado,
-                'updated_at' => Carbon::now('America/Santiago'),
-            ]);
+        $vehiculo = Vehiculo::findOrFail($id);
+        $vehiculo->update([
+            'estado'    => $request->estado,
+            'marca'     => $request->marca,
+            'anio'      => $request->anio,
+            'capacidad' => $request->capacidad,
+        ]);
 
-        return redirect()->route('admin.micros.index')
-            ->with('exito', 'La ficha técnica de la unidad ha sido actualizada.');
+        return redirect('/admin/micros')->with('exito', 'Ficha de la máquina ' . $vehiculo->patente . ' actualizada correctamente.');
     }
 }
