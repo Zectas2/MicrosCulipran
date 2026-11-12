@@ -124,28 +124,27 @@
         Chart.defaults.font.family = "'Instrument Sans', sans-serif";
         Chart.defaults.color = '#3f3f46';
 
-        // Sintaxis correcta para inyectar JSON desde Laravel a JavaScript
+        // Sintaxis correcta y segura para inyectar JSON desde Laravel a JavaScript
         const etiquetasChoferes = {
             {
-                Illuminate\ Support\ Js::from($labelsProductividad)
+                Illuminate\ Support\ Js::from($labelsProductividad ?? [])
             }
         };
         const datosVueltas = {
             {
-                Illuminate\ Support\ Js::from($datosProductividad)
+                Illuminate\ Support\ Js::from($datosProductividad ?? [])
             }
         };
         const etiquetasEficiencia = {
             {
-                Illuminate\ Support\ Js::from($labelsEficiencia)
+                Illuminate\ Support\ Js::from($labelsEficiencia ?? [])
             }
         };
         const datosMinutos = {
             {
-                Illuminate\ Support\ Js::from($datosEficiencia)
+                Illuminate\ Support\ Js::from($datosEficiencia ?? [])
             }
         };
-
         // Gráfico 1: Productividad
         if (document.getElementById('productividadChart')) {
             new Chart(document.getElementById('productividadChart').getContext('2d'), {

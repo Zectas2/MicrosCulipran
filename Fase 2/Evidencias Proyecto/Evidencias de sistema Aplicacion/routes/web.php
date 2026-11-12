@@ -67,7 +67,7 @@ Route::middleware(['rol:administrador'])->prefix('admin')->group(function () {
     // Panel General, Mapa de Administración y BI
     Route::get('/', [PanelAdministracionControlador::class, 'index'])->name('admin.index');
     Route::get('/mapa', [\App\Http\Controllers\Admin\MapaAdminControlador::class, 'index'])->name('admin.mapa');
-    Route::get('/bi', [PanelAdministracionControlador::class, 'bi'])->name('admin.bi');
+   
 
     // Gestión de Choferes
     Route::get('/choferes', [ChoferControlador::class, 'index'])->name('admin.choferes.index');
@@ -99,6 +99,8 @@ Route::middleware(['rol:administrador'])->prefix('admin')->group(function () {
     Route::post('/notificaciones', [AdminNotificacionControlador::class, 'store'])->name('admin.notificaciones.store');
 
     Route::get('/mapa/datos-vivo', [\App\Http\Controllers\Admin\MapaAdminControlador::class, 'datosEnVivo'])->name('admin.mapa.datos');
+
+    Route::get('/inteligencia', [\App\Http\Controllers\Admin\InteligenciaOperativaControlador::class, 'index'])->name('admin.inteligencia');
 });
 
 
