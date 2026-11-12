@@ -14,49 +14,50 @@ class PanelAdministracionControlador extends Controller
         $hoy = \Carbon\Carbon::now($tz);
         $fechaActual = $hoy->format('Y-m-d');
 
-        // 1. KPIs utilizando los Modelos Eloquent para respetar UUIDs nativamente
+        // 1. KPIs utilizando hora_programada para el conteo del día
         $microsEnRuta = \App\Models\Recorrido::where('estado', 'en_ruta')
-            ->whereDate('hora_salida', $fechaActual)
+            ->whereDate('hora_programada', $fechaActual)
             ->count();
 
-        $recorridosHoy = \App\Models\Recorrido::whereDate('hora_salida', $fechaActual)
+        $recorridosHoy = \App\Models\Recorrido::whereDate('hora_programada', $fechaActual)
             ->count();
 
-        // Asumiendo que su modelo se llama Vehiculo
         $alertas = \App\Models\Vehiculo::where('estado', 'en_mantencion')
             ->count();
 
-        // 2. Módulo de Flota Activa (Blindado con Eloquent y Relaciones)
+        // 2. Módulo de Flota Activa
         $flotaActiva = \App\Models\Recorrido::with(['vehiculo', 'conductor'])
             ->whereNotIn('estado', ['finalizado', 'cancelado'])
-            ->whereDate('hora_salida', $fechaActual)
-            ->orderBy('hora_salida', 'asc')
+            ->whereDate('hora_programada', $fechaActual) // Filtramos por la agenda
+            ->orderBy('hora_programada', 'asc') // Ordenamos por itinerario
             ->get()
             ->map(function ($recorrido) use ($tz, $hoy) {
-                // Gracias al $casts de su modelo, hora_salida ya es un objeto Carbon
-                $horaSalida = $recorrido->hora_salida->copy()->setTimezone($tz);
+                // La base de la vista es la hora programada
+                $horaProgramada = \Carbon\Carbon::parse($recorrido->hora_programada)->setTimezone($tz);
 
-                // Construimos un objeto limpio idéntico al que espera su vista Blade
                 $item = new \stdClass();
                 $item->patente = $recorrido->vehiculo ? $recorrido->vehiculo->patente : 'S/P';
                 $item->conductor = $recorrido->conductor ? $recorrido->conductor->nombre : 'No asignado';
-                $item->horaSalidaFormateada = $horaSalida->format('H:i');
+                $item->horaSalidaFormateada = $horaProgramada->format('H:i'); // Mostramos la hora teórica en la tarjeta
                 $item->bgColor = 'bg-white';
                 $item->bordeClase = 'border-gray-200';
 
-                // Lógica Condicional: Diferenciamos el diseño y cálculo según el estado
+                // Lógica Condicional separada
                 if ($recorrido->estado === 'en_ruta') {
+                    // Si ya salió, usamos la hora_salida real para medir el tiempo conduciendo
+                    $horaSalidaReal = \Carbon\Carbon::parse($recorrido->hora_salida)->setTimezone($tz);
+
                     $item->iconBg = 'bg-primario/10';
                     $item->iconColor = 'text-primario';
                     $item->textoEstado = 'En Ruta';
                     $item->badgeClass = 'bg-green-100 text-green-800';
 
                     $item->etiquetaTiempo = 'Tiempo en ruta';
-                    $minutos = round($hoy->diffInMinutes($horaSalida));
+                    $minutos = round($hoy->diffInMinutes($horaSalidaReal));
                     $item->valorTiempo = $minutos . ' min';
                     $item->textoTiempoClase = 'text-gray-700';
                 } else {
-                    // Estado: Asignado / Por Salir
+                    // Si NO ha salido (programado), calculamos cuánto falta para la hora programada
                     $item->iconBg = 'bg-gray-100';
                     $item->iconColor = 'text-gray-500';
                     $item->textoEstado = 'Por Salir';
@@ -64,14 +65,13 @@ class PanelAdministracionControlador extends Controller
 
                     $item->etiquetaTiempo = 'Sale en';
 
-                    if ($hoy->greaterThan($horaSalida)) {
+                    if ($hoy->greaterThan($horaProgramada)) {
                         $item->valorTiempo = 'Atrasado';
                         $item->textoTiempoClase = 'text-red-500 font-extrabold';
                         $item->badgeClass = 'bg-red-100 text-red-800';
                         $item->textoEstado = 'Retrasado';
                     } else {
-                        // CORRECCIÓN: Aplicamos abs() para asegurar un valor absoluto siempre positivo
-                        $minutosRestantes = abs(round($hoy->diffInMinutes($horaSalida)));
+                        $minutosRestantes = abs(round($hoy->diffInMinutes($horaProgramada)));
                         $item->valorTiempo = $minutosRestantes . ' min';
                         $item->textoTiempoClase = 'text-gray-500';
                     }
@@ -85,63 +85,6 @@ class PanelAdministracionControlador extends Controller
             'recorridosHoy',
             'alertas',
             'flotaActiva'
-        ));
-    }
-
-    public function bi()
-    {
-        $hoy = Carbon::today('America/Santiago');
-
-        // 1. KPI: Vueltas Completadas
-        $vueltasCompletadas = DB::table('recorridos')
-            ->where('estado', 'finalizado')
-            ->whereDate('updated_at', $hoy)
-            ->count();
-
-        // KPI: Puntualidad (Simulado por ahora, requiere guardar la hora teórica en la BD)
-        $puntualidad = 92;
-
-        // 2. Productividad por Chofer (Gráfico de Barras Vertical)
-        $productividad = DB::table('recorridos')
-            ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
-            ->where('recorridos.estado', 'finalizado')
-            ->whereDate('recorridos.updated_at', $hoy)
-            ->select('usuarios.nombre', DB::raw('COUNT(recorridos.id) as total_vueltas'))
-            ->groupBy('usuarios.id', 'usuarios.nombre')
-            ->get();
-
-        $labelsProductividad = $productividad->pluck('nombre');
-        $datosProductividad = $productividad->pluck('total_vueltas');
-
-        // 3. Eficiencia de Ruta - Tiempo Promedio (Gráfico Horizontal)
-        $eficiencia = DB::table('recorridos')
-            ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
-            ->where('recorridos.estado', 'finalizado')
-            ->whereDate('recorridos.updated_at', $hoy)
-            ->select(
-                'usuarios.nombre',
-                DB::raw('ROUND(AVG(EXTRACT(EPOCH FROM (recorridos.updated_at::timestamp - recorridos.hora_salida::timestamp)) / 60)) as minutos_promedio')
-            )
-            ->groupBy('usuarios.id', 'usuarios.nombre')
-            ->get();
-
-        $labelsEficiencia = $eficiencia->pluck('nombre');
-        $datosEficiencia = $eficiencia->pluck('minutos_promedio');
-
-        // 4. Panel de Mantenimiento (Máquinas fuera de servicio)
-        $maquinasMantenimiento = DB::table('vehiculos')
-            ->whereIn('estado', ['en_mantencion', 'fuera_de_servicio'])
-            ->select('patente', 'estado', 'updated_at')
-            ->get();
-
-        return view('admin.bi', compact(
-            'vueltasCompletadas',
-            'puntualidad',
-            'labelsProductividad',
-            'datosProductividad',
-            'labelsEficiencia',
-            'datosEficiencia',
-            'maquinasMantenimiento'
         ));
     }
 }
