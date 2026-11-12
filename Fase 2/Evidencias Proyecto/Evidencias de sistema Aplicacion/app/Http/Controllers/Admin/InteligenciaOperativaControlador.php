@@ -58,7 +58,7 @@ class InteligenciaOperativaControlador extends Controller
             ->select('patente', 'estado', 'updated_at')
             ->get();
 
-        return view('admin.inteligencia', compact(
+        return view('admin.bi', compact(
             'puntualidad',
             'vueltasCompletadas',
             'labelsProductividad',
