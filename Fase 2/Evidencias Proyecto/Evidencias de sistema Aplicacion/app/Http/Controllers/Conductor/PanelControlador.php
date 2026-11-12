@@ -133,4 +133,50 @@ class PanelControlador extends Controller
             return response()->json(['error' => 'Falla en el servidor: ' . $e->getMessage()], 500);
         }
     }
+
+    public function itinerario()
+    {
+        $hoy = Carbon::today('America/Santiago');
+        $conductorId = Auth::id();
+
+        // 1. Extraer los turnos de hoy
+        $turnosHoy = DB::table('recorridos')
+            ->leftJoin('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
+            ->where('recorridos.conductor_id', $conductorId)
+            ->whereDate('recorridos.hora_programada', $hoy)
+            ->select('recorridos.*', 'vehiculos.patente')
+            ->orderBy('recorridos.hora_programada', 'asc')
+            ->get();
+
+        $maquinaHoy = $turnosHoy->first()->patente ?? 'Sin Asignar';
+
+        // 2. Extraer turnos futuros y agruparlos por día
+        $futuros = DB::table('recorridos')
+            ->leftJoin('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
+            ->where('recorridos.conductor_id', $conductorId)
+            ->whereDate('recorridos.hora_programada', '>', $hoy)
+            ->select('recorridos.*', 'vehiculos.patente')
+            ->orderBy('recorridos.hora_programada', 'asc')
+            ->get();
+
+        $turnosFuturos = [];
+        foreach ($futuros as $turno) {
+            $fecha = Carbon::parse($turno->hora_programada)->timezone('America/Santiago')->locale('es');
+            $fechaStr = $fecha->format('Y-m-d');
+
+            if (!isset($turnosFuturos[$fechaStr])) {
+                $turnosFuturos[$fechaStr] = (object)[
+                    'dia_semana' => substr($fecha->dayName, 0, 3), // lun, mar, mie...
+                    'dia_numero' => $fecha->format('d'),
+                    'vueltas' => 0,
+                    'horarios' => [],
+                    'patente' => $turno->patente ?? 'S/A'
+                ];
+            }
+            $turnosFuturos[$fechaStr]->vueltas++;
+            $turnosFuturos[$fechaStr]->horarios[] = $fecha->format('H:i');
+        }
+
+        return view('conductor.itinerario', compact('turnosHoy', 'maquinaHoy', 'turnosFuturos'));
+    }
 }
