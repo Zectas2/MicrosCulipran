@@ -100,7 +100,7 @@ Route::middleware(['rol:administrador'])->prefix('admin')->group(function () {
 
     Route::get('/mapa/datos-vivo', [\App\Http\Controllers\Admin\MapaAdminControlador::class, 'datosEnVivo'])->name('admin.mapa.datos');
 
-    Route::get('/inteligencia', [\App\Http\Controllers\Admin\InteligenciaOperativaControlador::class, 'index'])->name('admin.inteligencia');
+    Route::get('/bi', [\App\Http\Controllers\Admin\InteligenciaOperativaControlador::class, 'index'])->name('admin.inteligencia');
 });
 
 
