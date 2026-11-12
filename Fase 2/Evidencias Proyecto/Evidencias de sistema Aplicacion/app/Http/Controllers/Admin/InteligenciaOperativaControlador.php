@@ -110,7 +110,8 @@ class InteligenciaOperativaControlador extends Controller
             'labelsEficiencia',
             'datosEficiencia',
             'maquinasMantenimiento',
-            'alertasVelocidad'
+            'alertasVelocidad',
+            'excepcionesHorario' // <-- Verifique que esta línea esté presente
         ));
     }
 }
