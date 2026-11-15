@@ -60,4 +60,29 @@ class AutenticacionControlador extends Controller
 
         return redirect('/login');
     }
+
+    // Mostrar vista de olvido de contraseña
+    public function mostrarOlvido()
+    {
+        return view('auth.olvido');
+    }
+
+    // Procesar solicitud de recuperación
+    public function procesarOlvido(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        // Verificamos si el usuario existe en la base de datos
+        $usuario = \App\Models\User::where('email', $request->email)->first();
+
+        if (!$usuario) {
+            return back()->withErrors(['email' => 'Este correo no está registrado en la flota.']);
+        }
+
+        // Aquí, en un futuro, se puede insertar un registro en una tabla de notificaciones para el Admin.
+        // Por ahora, redirigimos al login con el mensaje de éxito indicando el protocolo a seguir.
+        return redirect()->route('login')->with('exito', 'Solicitud enviada. Acérquese a la administración para recibir su nueva clave.');
+    }
 }

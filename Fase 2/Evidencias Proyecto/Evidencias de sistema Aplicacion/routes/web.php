@@ -49,6 +49,10 @@ Route::get('/mapa/datos-vivo', [\App\Http\Controllers\Publico\MapaControlador::c
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AutenticacionControlador::class, 'mostrarLogin'])->name('login');
     Route::post('/login', [AutenticacionControlador::class, 'ingresar']);
+
+    // Nuevas rutas de recuperación
+    Route::get('/olvido-clave', [AutenticacionControlador::class, 'mostrarOlvido'])->name('password.request');
+    Route::post('/olvido-clave', [AutenticacionControlador::class, 'procesarOlvido'])->name('password.email');
 });
 
 Route::post('/logout', [AutenticacionControlador::class, 'cerrarSesion'])->name('logout');
