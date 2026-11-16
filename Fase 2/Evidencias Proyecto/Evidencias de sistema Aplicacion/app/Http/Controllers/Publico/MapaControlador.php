@@ -10,7 +10,7 @@ class MapaControlador extends Controller
 {
     public function index()
     {
-        // Obtenemos la última ubicación conocida de las micros que están 'en_ruta' hoy
+        // Obetener la última ubicación conocida de las micros que están 'en_ruta' hoy
         $microsActivas = DB::table('recorridos')
             ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
             // Subconsulta para obtener solo el último registro de ubicación por recorrido

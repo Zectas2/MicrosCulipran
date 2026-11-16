@@ -15,8 +15,9 @@ class NotificacionControlador extends Controller
 
     public function store(Request $request)
     {
+        // Validamos el nuevo tipo 'pana'
         $request->validate([
-            'tipo'   => 'required|in:info,warning,danger',
+            'tipo'   => 'required|in:info,warning,pana,danger',
             'titulo' => 'required|string|max:255',
             'cuerpo' => 'required|string',
         ]);

@@ -46,7 +46,7 @@ class TiemposControlador extends Controller
                 $llegada = Carbon::parse($viaje->updated_at);
                 $diff = $salida->diffInMinutes($llegada);
 
-                if ($diff > 15 && $diff < 120) { // Filtro de cordura operativa
+                if ($diff > 15 && $diff < 120) { // Filtro de duraciones anormales
                     $duraciones[] = $diff;
                 }
             }

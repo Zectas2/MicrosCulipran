@@ -25,7 +25,8 @@
                 <select name="tipo" required class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
                     <option value="info">Información General (Horarios/Tarifas)</option>
                     <option value="warning">Retraso Operativo</option>
-                    <option value="danger">Emergencia / Micro en Pana</option>
+                    <option value="pana">Micro en Pana / Avería</option>
+                    <option value="danger">Emergencia Grave (Accidente/Corte)</option>
                 </select>
             </div>
             <div>
