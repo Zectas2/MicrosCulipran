@@ -10,30 +10,29 @@ class HorarioControlador extends Controller
 {
     public function index()
     {
-        // Forzamos el idioma español para las traducciones de fechas
         Carbon::setLocale('es');
 
-        // Establecemos la fecha de hoy en la zona horaria correcta
         $fechaActual = Carbon::now('America/Santiago');
         $hoy = $fechaActual->toDateString();
 
-        // Extraemos los recorridos activos que corresponden estrictamente al día de hoy
-        $recorridos = Recorrido::where('estado', '!=', 'finalizado')
-            ->whereDate('hora_salida', $hoy)
-            ->orderBy('hora_salida', 'asc')
+        // 1. Filtrar por 'hora_programada' en lugar de 'hora_salida'
+        // 2. Quitamos el filtro de 'finalizado' para mostrar toda la agenda del día
+        $recorridos = Recorrido::whereDate('hora_programada', $hoy)
+            ->orderBy('hora_programada', 'asc')
             ->get();
 
         $hayDatos = $recorridos->isNotEmpty();
 
-        // Formateamos las horas de salida
         $horariosSalida = [];
         if ($hayDatos) {
             foreach ($recorridos as $recorrido) {
-                $horariosSalida[] = $recorrido->hora_salida->format('H:i');
+                // Formatear desde hora_programada
+                $horariosSalida[] = Carbon::parse($recorrido->hora_programada)
+                    ->setTimezone('America/Santiago')
+                    ->format('H:i');
             }
         }
 
-        // Generamos un texto amigable con la fecha en español
         $textoFecha = ucfirst($fechaActual->translatedFormat('l, d \d\e F'));
 
         return view('cliente.horarios', [
