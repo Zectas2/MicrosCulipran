@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\Recorrido;
 use App\Models\Vehiculo;
 use Illuminate\Support\Facades\DB;
@@ -10,22 +11,32 @@ use Carbon\Carbon;
 
 class InteligenciaOperativaControlador extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $hoy = Carbon::today('America/Santiago');
+        $tz = 'America/Santiago';
 
-        // 1. Cargar recorridos finalizados HOY usando los Modelos Eloquent
-        // Usamos whereDate en 'updated_at' porque es el momento exacto en que se finalizó la ruta
+        // 1. Motor de Fecha Dinámica
+        // Si el usuario selecciona una fecha, la usamos. Si no, mostramos "Hoy".
+        $fechaInput = $request->query('fecha');
+        try {
+            $fechaConsulta = $fechaInput ? Carbon::parse($fechaInput, $tz)->startOfDay() : Carbon::today($tz);
+        } catch (\Exception $e) {
+            $fechaConsulta = Carbon::today($tz);
+        }
+
+        $fechaValor = $fechaConsulta->format('Y-m-d'); // Para el input HTML
+
+        // 2. Cargar recorridos finalizados en la FECHA CONSULTADA
         $recorridosFinalizados = Recorrido::with(['conductor', 'vehiculo'])
             ->where('estado', 'finalizado')
-            ->whereDate('updated_at', $hoy)
+            ->whereDate('updated_at', $fechaConsulta)
             ->get();
 
         $vueltasCompletadas = $recorridosFinalizados->count();
 
-        // 2. KPI: Puntualidad Real y Excepciones de Horario
+        // 3. KPI: Puntualidad Real y Excepciones de Horario
         $totalSalidas = $recorridosFinalizados->count();
-        $excepcionesHorario = collect(); // Colección para rastrear a los infractores
+        $excepcionesHorario = collect();
 
         $salidasA_tiempo = $recorridosFinalizados->filter(function ($r) use (&$excepcionesHorario) {
             if (!$r->hora_programada || !$r->hora_salida) return false;
@@ -33,21 +44,18 @@ class InteligenciaOperativaControlador extends Controller
             $programada = Carbon::parse($r->hora_programada);
             $salidaReal = Carbon::parse($r->hora_salida);
 
-            // Calculamos la diferencia (Positivo = salió tarde, Negativo = salió temprano)
             $minutosDiferencia = $programada->diffInMinutes($salidaReal, false);
 
-            // Ventana estricta: -2 minutos (anticipación máxima) a +8 minutos (espera máxima)
             if ($minutosDiferencia >= -2 && $minutosDiferencia <= 8) {
                 return true;
             } else {
-                // Atrapamos al infractor para el reporte
                 $estadoPuntualidad = $minutosDiferencia > 8 ? 'Atrasado' : 'Adelantado';
                 $excepcionesHorario->push((object)[
                     'patente' => $r->vehiculo->patente ?? 'S/P',
                     'conductor' => $r->conductor->nombre ?? 'Desconocido',
                     'programada' => $programada->format('H:i'),
                     'salida_real' => $salidaReal->format('H:i'),
-                    'diferencia_minutos' => round(abs($minutosDiferencia)), // <-- Aplicamos round aquí
+                    'diferencia_minutos' => round(abs($minutosDiferencia)),
                     'estado' => $estadoPuntualidad
                 ]);
                 return false;
@@ -56,13 +64,13 @@ class InteligenciaOperativaControlador extends Controller
 
         $puntualidad = $totalSalidas > 0 ? round(($salidasA_tiempo / $totalSalidas) * 100) : 100;
 
-        // 3. KPI: Velocidad Promedio Diaria
+        // 4. KPI: Velocidad Promedio Diaria
         $velocidadPromedio = DB::table('ubicacion_vehiculos')
-            ->whereDate('created_at', $hoy)
+            ->whereDate('created_at', $fechaConsulta)
             ->avg('velocidad');
         $velocidadPromedio = round($velocidadPromedio ?? 0);
 
-        // 4. Gráfico 1: Productividad (Matemática pura con Colecciones Eloquent)
+        // 5. Gráfico 1: Productividad
         $productividad = $recorridosFinalizados->groupBy(function ($recorrido) {
             return $recorrido->conductor->nombre ?? 'Desconocido';
         })->map(function ($viajes) {
@@ -72,13 +80,13 @@ class InteligenciaOperativaControlador extends Controller
         $labelsProductividad = $productividad->keys()->toArray();
         $datosProductividad = $productividad->values()->toArray();
 
-        // 5. Gráfico 2: Eficiencia (Cálculo de minutos exactos usando Carbon)
+        // 6. Gráfico 2: Eficiencia
         $eficiencia = $recorridosFinalizados->groupBy(function ($recorrido) {
             return $recorrido->vehiculo->patente ?? 'Sin Patente';
         })->map(function ($viajes) {
             return $viajes->avg(function ($recorrido) {
                 $salida = Carbon::parse($recorrido->hora_salida);
-                $llegada = Carbon::parse($recorrido->updated_at); // El updated_at es nuestra llegada
+                $llegada = Carbon::parse($recorrido->updated_at);
                 return $salida->diffInMinutes($llegada);
             });
         });
@@ -86,15 +94,15 @@ class InteligenciaOperativaControlador extends Controller
         $labelsEficiencia = $eficiencia->keys()->toArray();
         $datosEficiencia = $eficiencia->values()->map(fn($v) => round($v, 1))->toArray();
 
-        // 6. Panel de Mantenimiento usando Modelo Vehiculo
+        // 7. Panel de Mantenimiento usando Modelo Vehiculo (Se mantiene general)
         $maquinasMantenimiento = Vehiculo::where('estado', 'en_mantencion')->get();
 
-        // 7. Alertas de Exceso de Velocidad (> 80 km/h)
+        // 8. Alertas de Exceso de Velocidad de la FECHA CONSULTADA
         $alertasVelocidad = DB::table('ubicacion_vehiculos')
             ->join('recorridos', 'ubicacion_vehiculos.recorrido_id', '=', 'recorridos.id')
             ->join('vehiculos', 'recorridos.vehiculo_id', '=', 'vehiculos.id')
             ->join('usuarios', 'recorridos.conductor_id', '=', 'usuarios.id')
-            ->whereDate('ubicacion_vehiculos.created_at', $hoy)
+            ->whereDate('ubicacion_vehiculos.created_at', $fechaConsulta)
             ->where('ubicacion_vehiculos.velocidad', '>', 80)
             ->select('vehiculos.patente', 'usuarios.nombre as conductor', 'ubicacion_vehiculos.velocidad', 'ubicacion_vehiculos.created_at')
             ->orderByDesc('ubicacion_vehiculos.created_at')
@@ -102,6 +110,7 @@ class InteligenciaOperativaControlador extends Controller
             ->get();
 
         return view('admin.bi', compact(
+            'fechaValor',
             'puntualidad',
             'vueltasCompletadas',
             'velocidadPromedio',
@@ -111,7 +120,7 @@ class InteligenciaOperativaControlador extends Controller
             'datosEficiencia',
             'maquinasMantenimiento',
             'alertasVelocidad',
-            'excepcionesHorario' // <-- Verifique que esta línea esté presente
+            'excepcionesHorario'
         ));
     }
 }

@@ -3,7 +3,7 @@
 @section('content')
 <div class="flex flex-col space-y-6 pb-6">
 
-    <!-- Cabecera -->
+    <!-- Cabecera y Selector de Fecha -->
     <div class="flex items-center justify-between mb-2">
         <div class="flex items-center">
             <a href="/admin" class="bg-primario/10 p-2 rounded-full text-primario mr-3 active:scale-95 transition-transform">
@@ -13,7 +13,14 @@
             </a>
             <h1 class="text-xl font-extrabold text-texto">Inteligencia Operativa</h1>
         </div>
-        <span class="bg-acento/20 text-acento px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider">Hoy</span>
+
+        <!-- Formulario Dinámico de Fecha -->
+        <form action="{{ route('admin.inteligencia') }}" method="GET" class="flex items-center">
+            <input type="date" name="fecha" id="fecha" value="{{ $fechaValor }}"
+                class="bg-acento/10 border border-acento/20 text-acento px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-acento cursor-pointer"
+                onchange="this.form.submit()"
+                title="Seleccione una fecha para auditar">
+        </form>
     </div>
 
     <!-- KPIs de Rendimiento Global -->
@@ -47,7 +54,7 @@
         <div class="flex justify-between items-start mb-4">
             <div>
                 <h3 class="font-bold text-texto text-sm">Productividad por Chofer</h3>
-                <p class="text-[10px] text-texto/50 uppercase tracking-wider font-bold mt-1">Total de recorridos finalizados hoy</p>
+                <p class="text-[10px] text-texto/50 uppercase tracking-wider font-bold mt-1">Total de recorridos finalizados en la fecha</p>
             </div>
         </div>
 
@@ -181,7 +188,7 @@
                 </div>
                 @empty
                 <div class="text-center py-4">
-                    <p class="text-sm font-bold text-texto/50">Ninguna infracción registrada hoy.</p>
+                    <p class="text-sm font-bold text-texto/50">Ninguna infracción registrada en la fecha.</p>
                 </div>
                 @endforelse
             </div>
@@ -201,6 +208,7 @@
         const datosVueltas = @json($datosProductividad ?? []);
         const etiquetasEficiencia = @json($labelsEficiencia ?? []);
         const datosMinutos = @json($datosEficiencia ?? []);
+
         // Gráfico 1: Productividad
         if (document.getElementById('productividadChart')) {
             new Chart(document.getElementById('productividadChart').getContext('2d'), {
@@ -208,7 +216,7 @@
                 data: {
                     labels: etiquetasChoferes,
                     datasets: [{
-                        label: 'Vueltas hoy',
+                        label: 'Vueltas del día',
                         data: datosVueltas,
                         backgroundColor: '#65a30d',
                         borderRadius: 6,
