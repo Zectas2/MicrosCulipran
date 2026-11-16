@@ -32,19 +32,27 @@ class PanelAdministracionControlador extends Controller
             ->orderBy('hora_programada', 'asc') // Ordenamos por itinerario
             ->get()
             ->map(function ($recorrido) use ($tz, $hoy) {
-                // La base de la vista es la hora programada
                 $horaProgramada = \Carbon\Carbon::parse($recorrido->hora_programada)->setTimezone($tz);
 
                 $item = new \stdClass();
                 $item->patente = $recorrido->vehiculo ? $recorrido->vehiculo->patente : 'S/P';
                 $item->conductor = $recorrido->conductor ? $recorrido->conductor->nombre : 'No asignado';
-                $item->horaSalidaFormateada = $horaProgramada->format('H:i'); // Mostramos la hora teórica en la tarjeta
+                $item->horaSalidaFormateada = $horaProgramada->format('H:i');
                 $item->bgColor = 'bg-white';
                 $item->bordeClase = 'border-gray-200';
 
+                // Función interna para formatear minutos largos a "Xh Ym"
+                $formatearTiempo = function ($minutosTotales) {
+                    if ($minutosTotales >= 60) {
+                        $horas = floor($minutosTotales / 60);
+                        $minutosRestantes = $minutosTotales % 60;
+                        return $horas . 'h ' . str_pad($minutosRestantes, 2, '0', STR_PAD_LEFT) . 'm';
+                    }
+                    return $minutosTotales . ' min';
+                };
+
                 // Lógica Condicional separada
                 if ($recorrido->estado === 'en_ruta') {
-                    // Si ya salió, usamos la hora_salida real para medir el tiempo conduciendo
                     $horaSalidaReal = \Carbon\Carbon::parse($recorrido->hora_salida)->setTimezone($tz);
 
                     $item->iconBg = 'bg-primario/10';
@@ -53,17 +61,15 @@ class PanelAdministracionControlador extends Controller
                     $item->badgeClass = 'bg-green-100 text-green-800';
 
                     $item->etiquetaTiempo = 'Tiempo en ruta';
-                    // Envolvemos el cálculo en abs() para forzar un número positivo siempre
-                    $minutos = abs(round($hoy->diffInMinutes($horaSalidaReal, false)));
-                    $item->valorTiempo = $minutos . ' min';
+
+                    $minutosBrutos = abs(round($hoy->diffInMinutes($horaSalidaReal, false)));
+                    $item->valorTiempo = $formatearTiempo($minutosBrutos);
                     $item->textoTiempoClase = 'text-gray-700';
                 } else {
-                    // Si NO ha salido (programado), calculamos cuánto falta para la hora programada
                     $item->iconBg = 'bg-gray-100';
                     $item->iconColor = 'text-gray-500';
                     $item->textoEstado = 'Por Salir';
                     $item->badgeClass = 'bg-gray-200 text-gray-700';
-
                     $item->etiquetaTiempo = 'Sale en';
 
                     if ($hoy->greaterThan($horaProgramada)) {
@@ -72,8 +78,8 @@ class PanelAdministracionControlador extends Controller
                         $item->badgeClass = 'bg-red-100 text-red-800';
                         $item->textoEstado = 'Retrasado';
                     } else {
-                        $minutosRestantes = abs(round($hoy->diffInMinutes($horaProgramada)));
-                        $item->valorTiempo = $minutosRestantes . ' min';
+                        $minutosBrutos = abs(round($hoy->diffInMinutes($horaProgramada)));
+                        $item->valorTiempo = $formatearTiempo($minutosBrutos);
                         $item->textoTiempoClase = 'text-gray-500';
                     }
                 }
