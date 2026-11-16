@@ -3,7 +3,7 @@
 @section('content')
 <div class="flex flex-col space-y-6 pb-6">
 
-    <!-- Cabecera y Selector de Fecha -->
+    <!-- Cabecera y Selector de Mes -->
     <div class="flex items-center justify-between mb-2">
         <div class="flex items-center">
             <a href="/admin" class="bg-primario/10 p-2 rounded-full text-primario mr-3 active:scale-95 transition-transform">
@@ -11,50 +11,53 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
             </a>
-            <h1 class="text-xl font-extrabold text-texto">Inteligencia Operativa</h1>
+            <div>
+                <h1 class="text-xl font-extrabold text-texto leading-none">Inteligencia Operativa</h1>
+                <p class="text-xs font-bold text-texto/50 uppercase tracking-widest mt-1">Auditoría Mensual</p>
+            </div>
         </div>
 
-        <!-- Formulario Dinámico de Fecha -->
+        <!-- Formulario Dinámico de Mes -->
         <form action="{{ route('admin.inteligencia') }}" method="GET" class="flex items-center">
-            <input type="date" name="fecha" id="fecha" value="{{ $fechaValor }}"
+            <input type="month" name="mes" id="mes" value="{{ $mesValor }}"
                 class="bg-acento/10 border border-acento/20 text-acento px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-acento cursor-pointer"
                 onchange="this.form.submit()"
-                title="Seleccione una fecha para auditar">
+                title="Seleccione un mes para auditar">
         </form>
     </div>
 
     <!-- KPIs de Rendimiento Global -->
     <div class="grid grid-cols-3 gap-4">
         <div class="bg-secundario p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
-            <span class="text-texto/50 text-[10px] font-bold uppercase tracking-wider mb-1">Puntualidad de Salidas</span>
+            <span class="text-texto/50 text-[10px] font-bold uppercase tracking-wider mb-1">Puntualidad (Mes)</span>
             <div class="flex items-baseline space-x-1">
-                <span class="text-3xl font-black text-acento">{{ $puntualidad }}%</span>
+                <span class="text-3xl font-black {{ $puntualidad == 0 ? 'text-gray-400' : 'text-acento' }}">{{ $puntualidad }}%</span>
             </div>
             <span class="text-texto/60 text-xs font-bold mt-1">Cumplimiento de horario</span>
         </div>
         <div class="bg-secundario p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
-            <span class="text-texto/50 text-[10px] font-bold uppercase tracking-wider mb-1">Vueltas Completadas</span>
+            <span class="text-texto/50 text-[10px] font-bold uppercase tracking-wider mb-1">Vueltas Mensuales</span>
             <div class="flex items-baseline space-x-1">
                 <span class="text-3xl font-black text-primario">{{ $vueltasCompletadas }}</span>
             </div>
-            <span class="text-texto/60 text-xs font-bold mt-1">Total flota en el día</span>
+            <span class="text-texto/60 text-xs font-bold mt-1">Total flota en el mes</span>
         </div>
         <div class="bg-secundario p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
-            <span class="text-texto/50 text-[10px] font-bold uppercase tracking-wider mb-1">Ritmo de Flota</span>
+            <span class="text-texto/50 text-[10px] font-bold uppercase tracking-wider mb-1">Ritmo Promedio</span>
             <div class="flex items-baseline space-x-1">
                 <span class="text-3xl font-black text-blue-500">{{ $velocidadPromedio }}</span>
                 <span class="text-sm font-bold text-texto/50">km/h</span>
             </div>
-            <span class="text-texto/60 text-xs font-bold mt-1">Velocidad promedio general</span>
+            <span class="text-texto/60 text-xs font-bold mt-1">En tránsito regular</span>
         </div>
     </div>
 
-    <!-- Gráfico 1: Productividad Diaria por Chofer -->
+    <!-- Gráfico 1: Productividad Mensual por Chofer -->
     <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
             <div>
-                <h3 class="font-bold text-texto text-sm">Productividad por Chofer</h3>
-                <p class="text-[10px] text-texto/50 uppercase tracking-wider font-bold mt-1">Total de recorridos finalizados en la fecha</p>
+                <h3 class="font-bold text-texto text-sm">Productividad Acumulada por Chofer</h3>
+                <p class="text-[10px] text-texto/50 uppercase tracking-wider font-bold mt-1">Total de recorridos finalizados en {{ $mesNombre }}</p>
             </div>
         </div>
 
@@ -66,7 +69,7 @@
                 <svg class="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                 </svg>
-                <p class="text-xs font-bold uppercase tracking-wider">Sin recorridos finalizados</p>
+                <p class="text-xs font-bold uppercase tracking-wider">Sin registros en el mes seleccionado</p>
             </div>
             @endif
         </div>
@@ -76,8 +79,8 @@
     <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
             <div>
-                <h3 class="font-bold text-texto text-sm">Tiempo Promedio del Recorrido</h3>
-                <p class="text-[10px] text-texto/50 uppercase tracking-wider font-bold mt-1">Cálculo desde "Iniciar" hasta "Finalizar"</p>
+                <h3 class="font-bold text-texto text-sm">Tiempo Promedio del Recorrido (Histórico)</h3>
+                <p class="text-[10px] text-texto/50 uppercase tracking-wider font-bold mt-1">Desempeño mensual de las unidades de transporte</p>
             </div>
         </div>
 
@@ -99,8 +102,8 @@
         <!-- Panel de Infracciones de Horario -->
         <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-texto text-sm">Fuera de Horario</h3>
-                <span class="bg-orange-500/10 text-orange-600 px-2 py-1 rounded-md text-[10px] font-bold uppercase">No Puntual</span>
+                <h3 class="font-bold text-texto text-sm">Faltas de Puntualidad</h3>
+                <span class="bg-orange-500/10 text-orange-600 px-2 py-1 rounded-md text-[10px] font-bold uppercase">Mes</span>
             </div>
             <div class="space-y-3">
                 @forelse($excepcionesHorario as $infraccion)
@@ -117,13 +120,13 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-[10px] text-texto/50 font-bold uppercase">Prog: {{ $infraccion->programada }}</p>
-                        <p class="text-xs font-black {{ $infraccion->estado === 'Atrasado' ? 'text-orange-600' : 'text-blue-600' }} mt-0.5">Real: {{ $infraccion->salida_real }}</p>
+                        <p class="text-[10px] text-texto/50 font-bold uppercase">Prg: {{ $infraccion->programada }}</p>
+                        <p class="text-[11px] font-black {{ $infraccion->estado === 'Atrasado' ? 'text-orange-600' : 'text-blue-600' }} mt-0.5">Real: {{ $infraccion->salida_real }}</p>
                     </div>
                 </div>
                 @empty
                 <div class="text-center py-4">
-                    <p class="text-sm font-bold text-texto/50">Asistencia perfecta, Señor. Nadie fuera de rango.</p>
+                    <p class="text-sm font-bold text-texto/50">Asistencia perfecta, Señor. Sin faltas este mes.</p>
                 </div>
                 @endforelse
             </div>
@@ -131,8 +134,8 @@
         <!-- Panel de Mantenimiento -->
         <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-texto text-sm">Estado de las Máquinas</h3>
-                <span class="bg-texto/5 text-texto/60 px-2 py-1 rounded-md text-[10px] font-bold uppercase">Mantenimiento</span>
+                <h3 class="font-bold text-texto text-sm">Estado de Máquinas</h3>
+                <span class="bg-texto/5 text-texto/60 px-2 py-1 rounded-md text-[10px] font-bold uppercase">Actual</span>
             </div>
             <div class="space-y-3">
                 @forelse($maquinasMantenimiento as $maquina)
@@ -155,7 +158,7 @@
                 </div>
                 @empty
                 <div class="text-center py-4">
-                    <p class="text-sm font-bold text-texto/50">Toda la flota se encuentra operativa.</p>
+                    <p class="text-sm font-bold text-texto/50">Toda la flota se encuentra operativa en este momento.</p>
                 </div>
                 @endforelse
             </div>
@@ -164,8 +167,8 @@
         <!-- Panel de Alertas Críticas -->
         <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-texto text-sm">Alertas de Seguridad</h3>
-                <span class="bg-red-500/10 text-red-600 px-2 py-1 rounded-md text-[10px] font-bold uppercase">> 80 km/h</span>
+                <h3 class="font-bold text-texto text-sm">Alertas de Velocidad</h3>
+                <span class="bg-red-500/10 text-red-600 px-2 py-1 rounded-md text-[10px] font-bold uppercase">Mes</span>
             </div>
             <div class="space-y-3">
                 @forelse($alertasVelocidad as $alerta)
@@ -182,13 +185,13 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-[10px] text-texto/50 font-bold uppercase">{{ \Carbon\Carbon::parse($alerta->created_at)->format('H:i') }}</p>
-                        <p class="text-xs font-black text-red-600 mt-0.5">{{ $alerta->velocidad }} km/h</p>
+                        <p class="text-[10px] text-texto/50 font-bold uppercase">{{ \Carbon\Carbon::parse($alerta->created_at)->format('d/m H:i') }}</p>
+                        <p class="text-[11px] font-black text-red-600 mt-0.5">{{ $alerta->velocidad }} km/h</p>
                     </div>
                 </div>
                 @empty
                 <div class="text-center py-4">
-                    <p class="text-sm font-bold text-texto/50">Ninguna infracción registrada en la fecha.</p>
+                    <p class="text-sm font-bold text-texto/50">Ninguna infracción registrada en el mes.</p>
                 </div>
                 @endforelse
             </div>
@@ -216,7 +219,7 @@
                 data: {
                     labels: etiquetasChoferes,
                     datasets: [{
-                        label: 'Vueltas del día',
+                        label: 'Vueltas completadas',
                         data: datosVueltas,
                         backgroundColor: '#65a30d',
                         borderRadius: 6,
