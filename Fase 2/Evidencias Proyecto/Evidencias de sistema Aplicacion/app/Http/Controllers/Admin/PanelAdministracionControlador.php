@@ -53,7 +53,8 @@ class PanelAdministracionControlador extends Controller
                     $item->badgeClass = 'bg-green-100 text-green-800';
 
                     $item->etiquetaTiempo = 'Tiempo en ruta';
-                    $minutos = round($hoy->diffInMinutes($horaSalidaReal));
+                    // Envolvemos el cálculo en abs() para forzar un número positivo siempre
+                    $minutos = abs(round($hoy->diffInMinutes($horaSalidaReal, false)));
                     $item->valorTiempo = $minutos . ' min';
                     $item->textoTiempoClase = 'text-gray-700';
                 } else {
