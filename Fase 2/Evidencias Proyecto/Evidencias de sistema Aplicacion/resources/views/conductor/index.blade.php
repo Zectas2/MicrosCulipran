@@ -201,26 +201,114 @@ $minutosAtraso = round($diferencia);
         const MODO_SIMULACION = true; // <-- Cambie a 'false' para volver al GPS real
 
         let indiceRuta = 0;
-        // Coordenadas extraídas de la Ruta G-60 (Culiprán -> Melipilla Centro)
+        // Coordenadas extraídas de la ruta oficial provistas por la Central
         const rutaCulipranMelipilla = [{
-                lat: -33.785000,
-                lng: -71.245000
+                lat: -33.81279290030742,
+                lng: -71.24476013527621
             },
             {
-                lat: -33.765000,
-                lng: -71.238000
+                lat: -33.80791451680108,
+                lng: -71.24035353617366
             },
             {
-                lat: -33.742000,
-                lng: -71.231000
+                lat: -33.801897961946125,
+                lng: -71.23380627805876
             },
             {
-                lat: -33.718000,
-                lng: -71.225000
+                lat: -33.79641178619433,
+                lng: -71.23495374262865
             },
             {
-                lat: -33.691356,
-                lng: -71.216710
+                lat: -33.79473793687899,
+                lng: -71.24085796428531
+            },
+            {
+                lat: -33.79174281205897,
+                lng: -71.25188000842618
+            },
+            {
+                lat: -33.78756738796553,
+                lng: -71.2478783131331
+            },
+            {
+                lat: -33.77961199864806,
+                lng: -71.24264846083852
+            },
+            {
+                lat: -33.77228473217946,
+                lng: -71.2399184121862
+            },
+            {
+                lat: -33.76390408640638,
+                lng: -71.23618515284831
+            },
+            {
+                lat: -33.75792912893649,
+                lng: -71.23324130519485
+            },
+            {
+                lat: -33.748221931135575,
+                lng: -71.2310388585207
+            },
+            {
+                lat: -33.73977483819957,
+                lng: -71.22471391076516
+            },
+            {
+                lat: -33.73247146444082,
+                lng: -71.21507174029314
+            },
+            {
+                lat: -33.723542309898896,
+                lng: -71.2123268494169
+            },
+            {
+                lat: -33.71516447026752,
+                lng: -71.21134858376648
+            },
+            {
+                lat: -33.7098183676861,
+                lng: -71.21288518166506
+            },
+            {
+                lat: -33.70646650208673,
+                lng: -71.21604282827273
+            },
+            {
+                lat: -33.69922805901677,
+                lng: -71.21612611563704
+            },
+            {
+                lat: -33.69273409823123,
+                lng: -71.21571185672933
+            },
+            {
+                lat: -33.6915244948198,
+                lng: -71.21699294022937
+            },
+            {
+                lat: -33.68836176259884,
+                lng: -71.2167513554451
+            },
+            {
+                lat: -33.68600399554829,
+                lng: -71.21659279724551
+            },
+            {
+                lat: -33.686110394369386,
+                lng: -71.21530387266577
+            },
+            {
+                lat: -33.68831494833526,
+                lng: -71.2154624308472
+            },
+            {
+                lat: -33.69011926847319,
+                lng: -71.21560176587727
+            },
+            {
+                lat: -33.69135079368622,
+                lng: -71.21673843673082
             }
         ];
         // =================================================================
@@ -249,7 +337,6 @@ $minutosAtraso = round($diferencia);
         };
 
         const enviarDatosAlServidor = async (latitud, longitud, velocidad) => {
-            // INYECCIÓN DE DIAGNÓSTICO: Registro de preparación
             console.log("🚀 [Telemetria] Preparando envío -> Lat: " + latitud + ", Lng: " + longitud + ", Vel: " + velocidad + " km/h");
 
             const controller = new AbortController();
@@ -274,22 +361,18 @@ $minutosAtraso = round($diferencia);
                 clearTimeout(timeoutId);
 
                 if (response.ok) {
-                    // INYECCIÓN DE DIAGNÓSTICO: Registro de éxito
                     const data = await response.json().catch(() => ({}));
                     console.log("✅ [Servidor OK] Paquete procesado correctamente:", data);
                     actualizarSemaforo('OK');
                 } else {
-                    // INYECCIÓN DE DIAGNÓSTICO: Registro de error HTTP
                     console.warn("⚠️ [Servidor Error] Código de respuesta HTTP:", response.status);
                     actualizarSemaforo('LENTO');
                 }
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    // INYECCIÓN DE DIAGNÓSTICO: Registro de timeout
                     console.error("⏱️ [Timeout] La petición tardó más de 4 segundos en responder.");
                     actualizarSemaforo('LENTO');
                 } else {
-                    // INYECCIÓN DE DIAGNÓSTICO: Registro de desconexión
                     console.error("❌ [Fallo de Red] No se pudo conectar con el servidor:", error);
                     actualizarSemaforo('OFFLINE');
                 }
@@ -298,16 +381,14 @@ $minutosAtraso = round($diferencia);
 
         const procesarUbicacion = () => {
             if (MODO_SIMULACION) {
-                // SIMULADOR: Toma un punto de la ruta y avanza
                 const coords = rutaCulipranMelipilla[indiceRuta];
-                enviarDatosAlServidor(coords.lat, coords.lng, 45.0); // Simula 45 km/h
+                enviarDatosAlServidor(coords.lat, coords.lng, 45.0);
 
                 indiceRuta++;
                 if (indiceRuta >= rutaCulipranMelipilla.length) {
-                    indiceRuta = 0; // Reinicia el ciclo al llegar al final
+                    indiceRuta = 0;
                 }
             } else {
-                // PRODUCCIÓN: Lee la antena GPS real del dispositivo
                 if ("geolocation" in navigator) {
                     navigator.geolocation.getCurrentPosition(
                         function(posicion) {
@@ -332,7 +413,6 @@ $minutosAtraso = round($diferencia);
             }
         };
 
-        // Disparo inicial y bucle de 5 segundos
         procesarUbicacion();
         setInterval(procesarUbicacion, 5000);
     });
