@@ -1,0 +1,14 @@
+MICROSCULIPRAN - EVIDENCIAS DE BASE DE DATOS
+
+Motor de base de datos utilizado: PostgreSQL, gestionado mediante Supabase.
+
+Contenido de esta carpeta:
+- migrations/: migraciones de Laravel que documentan la creación y cambios de tablas y columnas.
+- models/: modelos Eloquent usados por la aplicación para consultar y relacionar entidades.
+- seeders/ y factories/: archivos de inicialización y datos de prueba del proyecto.
+- config/database.php: configuración de conexiones de Laravel (los valores privados se obtienen de variables de entorno).
+
+Estas evidencias provienen del código de la aplicación y documentan su modelo de datos.
+El ZIP recibido no contiene un volcado/exportación (.sql) de la base de datos alojada en Supabase ni los registros reales de la instancia. Para obtener una copia de esos datos se debe exportar la instancia autorizada desde Supabase/PostgreSQL, sin compartir credenciales.
+
+Se excluye deliberadamente el archivo privado .env, que contiene claves y contraseñas.
