@@ -1,0 +1,65 @@
+<mxfile host="app.diagrams.net" agent="ChatGPT">
+  <diagram name="CU-12 - Acceder módulo administrativo" id="0">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sys" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=35;html=1;whiteSpace=wrap;strokeColor=#000000;fillColor=#ffffff;" value="MicrosCulipran" vertex="1">
+          <mxGeometry height="760" width="900" x="340" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ext1" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Solicitar nueva autenticación" vertex="1">
+          <mxGeometry height="78" width="300" x="535" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="inc3" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Cargar módulo administrativo" vertex="1">
+          <mxGeometry height="78" width="310" x="50" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="inc2" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Verificar permisos" vertex="1">
+          <mxGeometry height="78" width="310" x="50" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="inc1" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Validar rol administrador" vertex="1">
+          <mxGeometry height="78" width="310" x="50" y="341" as="geometry" />
+        </mxCell>
+        <mxCell id="inc0" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Autenticar usuario" vertex="1">
+          <mxGeometry height="78" width="310" x="50" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="einc1" edge="1" parent="sys" source="inc0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="inc1" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="einc2" edge="1" parent="sys" source="inc1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="inc2" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="einc3" edge="1" parent="sys" source="inc2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="inc3" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="205" y="580" />
+              <mxPoint x="205" y="580" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ext0" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Denegar acceso" vertex="1">
+          <mxGeometry height="78" width="300" x="535" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="eext0" edge="1" parent="sys" source="ext0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="inc0" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eext1" edge="1" parent="sys" source="ext1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="ext0" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="actor" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;strokeColor=#000000;fillColor=#ffffff;" value="Administrador" vertex="1">
+          <mxGeometry height="160" width="120" x="70" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="main" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontStyle=1;" value="CU-12&#xa;Acceder módulo administrativo" vertex="1">
+          <mxGeometry height="105" width="360" x="530" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="assoc" edge="1" parent="1" source="actor" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;startArrow=none;strokeColor=#000000;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="main">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="einc0" edge="1" parent="1" source="main" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;" target="inc0" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

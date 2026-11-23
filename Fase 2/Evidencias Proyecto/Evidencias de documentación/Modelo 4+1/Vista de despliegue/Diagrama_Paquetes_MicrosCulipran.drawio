@@ -1,0 +1,96 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Diagrama de Paquetes" id="0">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="p1" parent="1" style="shape=folder;tabWidth=70;tabHeight=22;tabPosition=left;html=1;whiteSpace=wrap;strokeColor=#000000;fillColor=#ffffff;fontStyle=1;" value="«package»&#xa;Presentación" vertex="1">
+          <mxGeometry height="250" width="260" x="80" y="77.5" as="geometry" />
+        </mxCell>
+        <mxCell id="p1a" parent="p1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Usuario Final" vertex="1">
+          <mxGeometry height="27" width="85" x="20" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="p1c" parent="p1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Administrador" vertex="1">
+          <mxGeometry height="39.11" width="105" x="80" y="197" as="geometry" />
+        </mxCell>
+        <mxCell id="p1b" parent="p1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Conductor" vertex="1">
+          <mxGeometry height="27" width="85" x="150" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" parent="1" style="shape=folder;tabWidth=70;tabHeight=22;tabPosition=left;html=1;whiteSpace=wrap;strokeColor=#000000;fillColor=#ffffff;fontStyle=1;" value="«package»&#xa;Controladores" vertex="1">
+          <mxGeometry height="215" width="260" x="470" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="p2a" parent="p2" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="VehiculoController" vertex="1">
+          <mxGeometry height="27" width="145" x="57.5" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="p2b" parent="p2" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="AuthController" vertex="1">
+          <mxGeometry height="27" width="130" x="65" y="164.11" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" parent="1" style="shape=folder;tabWidth=70;tabHeight=22;tabPosition=left;html=1;whiteSpace=wrap;strokeColor=#000000;fillColor=#ffffff;fontStyle=1;" value="«package»&#xa;Modelo / Dominio" vertex="1">
+          <mxGeometry height="300" width="360" x="900" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="p3a" parent="p3" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Usuario" vertex="1">
+          <mxGeometry height="42" width="95" x="25" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p3b" parent="p3" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Conductor" vertex="1">
+          <mxGeometry height="42" width="95" x="130" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p3c" parent="p3" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Administrador" vertex="1">
+          <mxGeometry height="42" width="95" x="235" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p3d" parent="p3" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Vehiculo" vertex="1">
+          <mxGeometry height="42" width="95" x="25" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="p3e" parent="p3" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Ruta" vertex="1">
+          <mxGeometry height="42" width="95" x="235" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="p3f" parent="p3" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Horario" vertex="1">
+          <mxGeometry height="42" width="95" x="235" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="p3g" parent="p3" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Recorrido" vertex="1">
+          <mxGeometry height="42" width="95" x="25" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="p3h" parent="p3" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Tarifa" vertex="1">
+          <mxGeometry height="42" width="95" x="25" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="p3i" parent="p3" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Ubicacion" vertex="1">
+          <mxGeometry height="42" width="95" x="235" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="p3j" parent="p3" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Indicador" vertex="1">
+          <mxGeometry height="42" width="95" x="130" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" parent="1" style="shape=folder;tabWidth=70;tabHeight=22;tabPosition=left;html=1;whiteSpace=wrap;strokeColor=#000000;fillColor=#ffffff;fontStyle=1;" value="«package»&#xa;Persistencia / Datos" vertex="1">
+          <mxGeometry height="190" width="310" x="470" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="p4a" parent="p4" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Supabase API" vertex="1">
+          <mxGeometry height="50" width="105" x="20" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="p4b" parent="p4" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="PostgreSQL" vertex="1">
+          <mxGeometry height="50" width="105" x="190" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="p4c" parent="p4" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Supabase Auth" vertex="1">
+          <mxGeometry height="45" width="110" x="102" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="40" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;" target="p2" value="«use»">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="41" edge="1" parent="1" source="p2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;" target="p3" value="«use»">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="42" edge="1" parent="1" source="p2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;" value="«use»">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="600" y="518.1" />
+            </Array>
+            <mxPoint x="600" y="518.05" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="43" edge="1" parent="1" source="p3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;entryX=0.497;entryY=0.105;entryDx=0;entryDy=0;entryPerimeter=0;" target="p4" value="«access»">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" parent="1" style="shape=note;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#fff2cc;align=left;verticalAlign=top;spacing=8;" value="Dependencias principales: Presentación → Controladores → Modelo/Dominio → Persistencia. Los controladores también utilizan servicios de autenticación y datos de Supabase." vertex="1">
+          <mxGeometry height="130" width="420" x="860" y="520" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

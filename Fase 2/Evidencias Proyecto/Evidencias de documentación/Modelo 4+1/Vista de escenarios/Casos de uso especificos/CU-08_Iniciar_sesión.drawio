@@ -1,0 +1,79 @@
+<mxfile host="app.diagrams.net" agent="ChatGPT">
+  <diagram name="CU-08 - Iniciar sesión" id="0">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sys" parent="1" style="swimlane;fontStyle=1;horizontal=1;startSize=35;html=1;whiteSpace=wrap;strokeColor=#000000;fillColor=#ffffff;" value="MicrosCulipran" vertex="1">
+          <mxGeometry height="760" width="1090" x="300" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ext0" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Informar credenciales inválidas" vertex="1">
+          <mxGeometry height="78" width="300" x="760" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="ext1" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Denegar acceso" vertex="1">
+          <mxGeometry height="78" width="300" x="760" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="inc3" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Cargar módulo según rol" vertex="1">
+          <mxGeometry height="78" width="310" x="60" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="inc2" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Identificar rol" vertex="1">
+          <mxGeometry height="78" width="310" x="60" y="488" as="geometry" />
+        </mxCell>
+        <mxCell id="inc1" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Validar credenciales" vertex="1">
+          <mxGeometry height="78" width="310" x="430" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="inc0" parent="sys" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;" value="Ingresar credenciales" vertex="1">
+          <mxGeometry height="78" width="310" x="430" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="eext1" edge="1" parent="sys" source="ext1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="ext0" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="einc1" edge="1" parent="sys" source="inc0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="inc1" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" x="0.0866" y="-10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="585" y="350" />
+              <mxPoint x="585" y="350" />
+            </Array>
+            <mxPoint x="420" y="220" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eext0" edge="1" parent="sys" source="ext0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" target="inc1" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="einc3" edge="1" parent="sys" source="inc2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="inc3" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" x="-0.0811" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="215" y="620" />
+              <mxPoint x="215" y="620" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="einc2" edge="1" parent="sys" source="inc1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="inc2" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" x="0.4967" y="-9" as="geometry">
+            <mxPoint x="1" as="offset" />
+            <Array as="points">
+              <mxPoint x="215.05" y="449.05" />
+            </Array>
+            <mxPoint x="530" y="180" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="actor" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;strokeColor=#000000;fillColor=#ffffff;" value="Conductor / Administrador" vertex="1">
+          <mxGeometry height="160" width="120" x="70" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="main" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontStyle=1;" value="CU-08&#xa;Iniciar sesión" vertex="1">
+          <mxGeometry height="105" width="360" x="530" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="assoc" edge="1" parent="1" source="actor" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;startArrow=none;strokeColor=#000000;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="main">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="einc0" edge="1" parent="1" source="main" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeColor=#000000;dashed=1;" target="inc0" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
