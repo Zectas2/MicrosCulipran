@@ -1,0 +1,49 @@
+@extends('layouts.app')
+@section('title', 'Emitir Comunicado - Admin')
+@section('content')
+<div class="flex flex-col space-y-6 pb-6">
+    <div class="flex items-center mb-2">
+        <a href="/admin" class="bg-primario/10 p-2 rounded-full text-primario mr-3 active:scale-95 transition-transform">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </a>
+        <h1 class="text-xl font-extrabold text-texto">Nuevo Comunicado</h1>
+    </div>
+
+    @if(session('exito'))
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative shadow-sm font-bold text-sm text-center">
+        {{ session('exito') }}
+    </div>
+    @endif
+
+    <div class="bg-secundario p-5 rounded-3xl shadow-sm border border-gray-100">
+        <form method="POST" action="{{ route('admin.notificaciones.store') }}" class="space-y-4">
+            @csrf
+            <div>
+                <label class="block text-xs font-bold text-texto/70 uppercase tracking-wider mb-1">Tipo de Alerta</label>
+                <select name="tipo" required class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
+                    <option value="info">Información General (Horarios/Tarifas)</option>
+                    <option value="warning">Retraso Operativo</option>
+                    <option value="pana">Micro en Pana / Avería</option>
+                    <option value="danger">Emergencia Grave (Accidente/Corte)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-texto/70 uppercase tracking-wider mb-1">Título del Mensaje</label>
+                <input type="text" name="titulo" required placeholder="Ej: Retraso en servicio por falla mecánica" class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario font-bold">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-texto/70 uppercase tracking-wider mb-1">Cuerpo del Mensaje</label>
+                <textarea name="cuerpo" required rows="5" placeholder="Escriba los detalles aquí..." class="w-full bg-fondo border border-gray-200 rounded-xl py-3 px-4 text-texto focus:outline-none focus:border-primario resize-none"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-peligro text-secundario font-black py-4 rounded-xl shadow-md active:scale-95 transition-transform mt-4 flex justify-center items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                </svg>
+                Enviar a todos los pasajeros
+            </button>
+        </form>
+    </div>
+</div>
+@endsection

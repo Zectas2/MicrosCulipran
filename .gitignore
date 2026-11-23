@@ -1,0 +1,21 @@
+# Credenciales y configuraciones privadas
+.env
+.env.*
+!.env.example
+
+# Dependencias de Laravel y Node.js
+**/vendor/
+**/node_modules/
+
+# Archivos temporales y registros
+**/storage/logs/*.log
+**/storage/framework/cache/data/*
+**/.phpunit.result.cache
+
+# Archivos del sistema operativo
+Thumbs.db
+.DS_Store
+
+# Archivos de configuracion del editor
+**/.vscode/
+**/.idea/
