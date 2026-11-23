@@ -1,0 +1,57 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="CU-08 Iniciar sesión" id="0">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=default;fillColor=#ffffff;" value="Conductor / Administrador" vertex="1">
+          <mxGeometry height="60" width="240" x="60" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=default;fillColor=#ffffff;" value="Interfaz Web" vertex="1">
+          <mxGeometry height="60" width="190" x="420" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=default;fillColor=#ffffff;" value="AuthController" vertex="1">
+          <mxGeometry height="60" width="190" x="890" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;strokeColor=default;fillColor=#ffffff;" value="Supabase Auth" vertex="1">
+          <mxGeometry height="60" width="200" x="1210" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="6" edge="1" parent="1" source="2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;strokeColor=default;" target="3" value="1: ingresarCredenciales(correo, contraseña)">
+          <mxGeometry relative="1" x="-0.0125" y="-10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="7" edge="1" parent="1" source="3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;strokeColor=default;" target="4" value="1.1: iniciarSesion(credenciales)">
+          <mxGeometry relative="1" y="-20" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8" edge="1" parent="1" source="4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;strokeColor=default;" target="5" value="1.1.1: validarCredenciales(credenciales)">
+          <mxGeometry relative="1" y="10" as="geometry">
+            <mxPoint x="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9" edge="1" parent="1" source="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;strokeColor=default;" target="4" value="1.1.2: retornarResultadoAutenticacion()">
+          <mxGeometry relative="1" x="0.0122" y="10" as="geometry">
+            <mxPoint x="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="10" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;strokeColor=default;" value="1.2: retornarAcceso()">
+          <mxGeometry relative="1" y="-20" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="890" y="140" as="sourcePoint" />
+            <mxPoint x="610" y="140" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="11" edge="1" parent="1" source="3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;startArrow=none;strokeWidth=1.2;strokeColor=default;" target="2" value="2: mostrarModuloSegunRol()">
+          <mxGeometry relative="1" x="0.0233" y="-10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" parent="1" style="shape=note;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=6;strokeColor=default;fillColor=#fff2cc;" value="Escenario alternativo:&#xa;Si las credenciales son inválidas, el sistema rechaza el acceso y muestra un mensaje de autenticación fallida." vertex="1">
+          <mxGeometry height="180" width="330" x="930" y="520" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
